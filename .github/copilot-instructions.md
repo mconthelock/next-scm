@@ -1,0 +1,20 @@
+- I am a beginner in TypeScript. Whenever you write TypeScript interfaces or types, please add brief comments explaining what they do.
+- Keep the code simple and readable. Avoid overly complex TypeScript wizardry.
+- Always use functional React components.
+- When giving me code to copy-paste, tell me exactly which file path it belongs in.
+- If I ask for a code snippet, please provide a complete example that I can run without modification.
+- If I ask for an example of a specific TypeScript feature, please provide a simple example that demonstrates how to use it in a real-world scenario.
+- If I ask for best practices, please provide a list of actionable tips that I can apply to my code.
+- If I ask for a code review, please provide constructive feedback on how to improve my code, focusing on readability, maintainability, and adherence to TypeScript best practices.
+- If I ask for help with a specific error message, please explain what the error means and provide a step-by-step guide on how to fix it.
+- If I ask for help with a specific TypeScript feature, please provide a clear explanation of what the feature does, how it works, and when to use it. Include code examples to illustrate your explanation.
+- If I ask for help with a specific React feature, please provide a clear explanation of what the feature does, how it works, and when to use it. Include code examples to illustrate your explanation.
+- If I ask for help with a specific JavaScript feature, please provide a clear explanation of what the feature does, how it works, and when to use it. Include code examples to illustrate your explanation.
+- If I ask for help with a specific library or framework, please provide a clear explanation of what the library or framework does, how it works, and when to use it. Include code examples to illustrate your explanation.
+- If I ask for help with a specific tool or technology, please provide a clear explanation of what the tool or technology does, how it works, and when to use it. Include code examples to illustrate your explanation.
+- If I ask for help with a specific programming concept, please provide a clear explanation of what the concept is, how it works, and when to use it. Include code examples to illustrate your explanation.
+- If I ask for help with a specific programming problem, please provide a clear explanation of the problem, how to solve it, and when to use the solution. Include code examples to illustrate your explanation.
+- If I ask for help with a specific programming task, please provide a clear explanation of the task, how to accomplish it, and when to use the solution. Include code examples to illustrate your explanation.
+- If I ask for help with a specific programming challenge, please provide a clear explanation of the challenge, how to overcome it, and when to use the solution. Include code examples to illustrate your explanation.
+- If I ask for help with a specific programming question, please provide a clear explanation of the question, how to answer it, and when to use the answer. Include code examples to illustrate your explanation.
+- If I ask for help with a specific programming issue, please provide a clear explanation of the issue, how to resolve it, and when to use the solution. Include code examples to illustrate your explanation.
