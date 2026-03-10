@@ -1,17 +1,10 @@
 'use client';
 import Image from 'next/image';
 import {
-    Search,
-    Globe,
     Menu,
     X,
     User,
-    ChevronRight,
-    LayoutDashboard,
-    Package,
-    Truck,
-    BarChart3,
-    Users,
+    ChevronDown,
     Settings,
     ChevronLeft,
     LogOut,
@@ -19,11 +12,27 @@ import {
 import React, { useState, useEffect } from 'react';
 import { useSession, signOut } from 'next-auth/react';
 import Logo from '../../public/logo.svg';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 /** รายการเมนู */
-interface NavItem {
+interface NavSubItem {
+    /** ชื่อเมนูย่อยที่จะแสดงใน submenu */
     title: string;
     href: string;
+    /** true = ต้อง login ถึงจะเห็น, false = เห็นตอนยังไม่ login, undefined = เห็นทุกสถานะ */
+    requireAuth?: boolean;
+}
+
+interface NavItem {
+    title: string;
+    href?: string;
+    /** children ใช้กรณีเมนูนี้เป็น parent และมีเมนูย่อยด้านใน */
+    children?: NavSubItem[];
     /** true = ต้อง login ถึงจะเห็น, false = เห็นตอนยังไม่ login, undefined = เห็นทุกสถานะ */
     requireAuth?: boolean;
 }
@@ -35,24 +44,67 @@ interface NavItem {
  * - ไม่ใส่ (undefined)  → เห็นทุกสถานะ
  */
 const allNavItems: NavItem[] = [
-    { title: 'Dashboard', href: '/dashboard', requireAuth: true },
-    { title: 'Inventory', href: '/inventory', requireAuth: true },
-    { title: 'Logistics', href: '/logistics', requireAuth: true },
-    { title: 'Analytics', href: '/analytics', requireAuth: true },
-    { title: 'Users', href: '/users', requireAuth: true },
-    { title: 'Settings', href: '/settings', requireAuth: true },
+    { title: 'Home', href: '/', requireAuth: true },
+    {
+        title: 'Purchase Orders',
+        href: '/orders',
+        requireAuth: true,
+        children: [
+            { title: 'Users', href: '/users', requireAuth: true },
+            { title: 'Settings', href: '/settings', requireAuth: true },
+            { title: 'Profile', href: '/profile', requireAuth: true },
+        ],
+    },
+    {
+        title: 'Claim slip',
+        href: '/logistics',
+        requireAuth: true,
+        children: [
+            { title: 'Users', href: '/users', requireAuth: true },
+            { title: 'Settings', href: '/settings', requireAuth: true },
+            { title: 'Profile', href: '/profile', requireAuth: true },
+        ],
+    },
+    {
+        title: 'Drawing',
+        href: '/analytics',
+        requireAuth: true,
+    },
+    {
+        title: 'Other',
+        requireAuth: true,
+        children: [
+            { title: 'Changing Notice', href: '/users', requireAuth: true },
+            { title: 'Kaizen 4M Change', href: '/settings', requireAuth: true },
+        ],
+    },
     // ตัวอย่างเมนูที่เห็นตอนยังไม่ login
-    // { title: 'About', href: '/about', requireAuth: false },
-    // ตัวอย่างเมนูที่เห็นทุกสถานะ
-    // { title: 'Home', href: '/' },
+    { title: 'Home', href: '/', requireAuth: false },
+    { title: 'About', href: '/about', requireAuth: false },
 ];
 
 /** กรองเมนูตามสถานะ login */
 function getVisibleNavItems(isLoggedIn: boolean): NavItem[] {
-    return allNavItems.filter(
-        (item) =>
-            item.requireAuth === undefined || item.requireAuth === isLoggedIn,
-    );
+    return allNavItems
+        .map((item) => ({
+            ...item,
+            children: item.children?.filter(
+                (child) =>
+                    child.requireAuth === undefined ||
+                    child.requireAuth === isLoggedIn,
+            ),
+        }))
+        .filter((item) => {
+            const isParentVisible =
+                item.requireAuth === undefined ||
+                item.requireAuth === isLoggedIn;
+
+            if (!isParentVisible) {
+                return false;
+            }
+
+            return !!item.href || (item.children?.length ?? 0) > 0;
+        });
 }
 
 export function Header() {
@@ -61,6 +113,9 @@ export function Header() {
     const [showUserMenu, setShowUserMenu] = useState(false);
 
     const [isOpen, setIsOpen] = useState(false);
+    const [expandedMobileMenu, setExpandedMobileMenu] = useState<string | null>(
+        null,
+    );
     const [isVisible, setIsVisible] = useState(true);
     const [lastScrollY, setLastScrollY] = useState(0);
 
@@ -111,7 +166,7 @@ export function Header() {
                     <div className="flex items-center justify-center">
                         <Image src={Logo} alt="" height={50} />
                     </div>
-                    <div className="h-14 w-px bg-slate-400 mx-1 hidden md:block" />
+                    <div className="h-14 w-px bg-slate-200 mx-1 hidden md:block" />
                     <div className="flex flex-col font-bold text-xs tracking-tighter leading-tight">
                         <span>MITSUBISHI</span>
                         <span>ELEVATOR ASIA CO.,LTD</span>
@@ -121,17 +176,50 @@ export function Header() {
                 {/* Desktop Nav — แสดงเฉพาะเมนูที่ตรงตามสถานะ login */}
                 <nav className="hidden lg:flex items-center justify-center flex-1 px-8">
                     <ul className="flex items-center gap-8">
-                        {visibleNavItems.map((item) => (
-                            <li key={item.title}>
-                                <a
-                                    href={item.href}
-                                    className="text-[13px] font-bold uppercase tracking-wide text-slate-700 hover:text-brand transition-colors relative group py-2"
-                                >
-                                    {item.title}
-                                    <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-brand transition-all group-hover:w-full" />
-                                </a>
-                            </li>
-                        ))}
+                        {visibleNavItems.map((item) => {
+                            if (item.children?.length) {
+                                return (
+                                    <li key={item.title}>
+                                        <DropdownMenu modal={false}>
+                                            <DropdownMenuTrigger asChild>
+                                                <button className="text-[13px] font-bold uppercase tracking-wide text-slate-700 hover:text-brand transition-colors relative group py-2 inline-flex items-center gap-1">
+                                                    {item.title}
+                                                    <ChevronDown className="h-3.5 w-3.5" />
+                                                    <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-brand transition-all group-hover:w-full" />
+                                                </button>
+                                            </DropdownMenuTrigger>
+                                            <DropdownMenuContent
+                                                align="start"
+                                                className="z-70"
+                                            >
+                                                {item.children.map((child) => (
+                                                    <DropdownMenuItem
+                                                        asChild
+                                                        key={child.title}
+                                                    >
+                                                        <a href={child.href}>
+                                                            {child.title}
+                                                        </a>
+                                                    </DropdownMenuItem>
+                                                ))}
+                                            </DropdownMenuContent>
+                                        </DropdownMenu>
+                                    </li>
+                                );
+                            }
+
+                            return (
+                                <li key={item.title}>
+                                    <a
+                                        href={item.href}
+                                        className="text-[13px] font-bold uppercase tracking-wide text-slate-700 hover:text-brand transition-colors relative group py-2"
+                                    >
+                                        {item.title}
+                                        <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-brand transition-all group-hover:w-full" />
+                                    </a>
+                                </li>
+                            );
+                        })}
                     </ul>
                 </nav>
 
@@ -149,7 +237,7 @@ export function Header() {
                                 <div className="h-8 w-8 rounded-full bg-brand flex items-center justify-center text-white text-xs font-bold">
                                     {user.name.charAt(0)}
                                 </div>
-                                <span className="hidden sm:block max-w-[120px] truncate">
+                                <span className="hidden sm:block max-w-30 truncate">
                                     {user.name}
                                 </span>
                             </button>
@@ -250,19 +338,87 @@ export function Header() {
                 <div className="flex flex-col h-full">
                     <nav className="flex-1 overflow-y-auto py-4">
                         <ul className="flex flex-col">
-                            {visibleNavItems.map((item) => (
-                                <li key={item.title}>
-                                    <a
-                                        href={item.href}
-                                        className="flex items-center justify-between px-8 py-4 text-sm font-medium text-slate-700 hover:bg-slate-50 hover:text-brand transition-colors"
-                                    >
-                                        <div className="flex items-center gap-3">
-                                            <ChevronLeft className="h-4 w-4 opacity-20" />
-                                            {item.title}
-                                        </div>
-                                    </a>
-                                </li>
-                            ))}
+                            {visibleNavItems.map((item) => {
+                                if (item.children?.length) {
+                                    const isExpanded =
+                                        expandedMobileMenu === item.title;
+
+                                    return (
+                                        <li key={item.title}>
+                                            <button
+                                                className="w-full flex items-center justify-between px-8 py-4 text-sm font-medium text-slate-700 hover:bg-slate-50 hover:text-brand transition-colors"
+                                                onClick={() =>
+                                                    setExpandedMobileMenu(
+                                                        isExpanded
+                                                            ? null
+                                                            : item.title,
+                                                    )
+                                                }
+                                            >
+                                                <div className="flex items-center gap-3">
+                                                    <ChevronLeft className="h-4 w-4 opacity-20" />
+                                                    {item.title}
+                                                </div>
+                                                <ChevronDown
+                                                    className={`h-4 w-4 transition-transform ${
+                                                        isExpanded
+                                                            ? 'rotate-180'
+                                                            : ''
+                                                    }`}
+                                                />
+                                            </button>
+
+                                            {isExpanded && (
+                                                <ul className="bg-slate-50 border-y border-slate-100">
+                                                    {item.children.map(
+                                                        (child) => (
+                                                            <li
+                                                                key={
+                                                                    child.title
+                                                                }
+                                                            >
+                                                                <a
+                                                                    href={
+                                                                        child.href
+                                                                    }
+                                                                    className="flex items-center gap-3 pl-14 pr-8 py-3 text-sm text-slate-600 hover:text-brand hover:bg-slate-100 transition-colors"
+                                                                    onClick={() => {
+                                                                        setIsOpen(
+                                                                            false,
+                                                                        );
+                                                                        setExpandedMobileMenu(
+                                                                            null,
+                                                                        );
+                                                                    }}
+                                                                >
+                                                                    {
+                                                                        child.title
+                                                                    }
+                                                                </a>
+                                                            </li>
+                                                        ),
+                                                    )}
+                                                </ul>
+                                            )}
+                                        </li>
+                                    );
+                                }
+
+                                return (
+                                    <li key={item.title}>
+                                        <a
+                                            href={item.href}
+                                            className="flex items-center justify-between px-8 py-4 text-sm font-medium text-slate-700 hover:bg-slate-50 hover:text-brand transition-colors"
+                                            onClick={() => setIsOpen(false)}
+                                        >
+                                            <div className="flex items-center gap-3">
+                                                <ChevronLeft className="h-4 w-4 opacity-20" />
+                                                {item.title}
+                                            </div>
+                                        </a>
+                                    </li>
+                                );
+                            })}
                         </ul>
                     </nav>
 

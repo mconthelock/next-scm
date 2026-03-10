@@ -18,7 +18,7 @@ const roboto = Roboto({
 });
 
 export const metadata: Metadata = {
-    title: 'AMECSCM',
+    title: 'Mitsubishi Elevator Asia Co.Ltd. | AMEC SCM',
     description: 'Supply Chain Management System',
     icons: {
         icon: '/favicon.ico',
