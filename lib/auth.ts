@@ -17,6 +17,9 @@ declare module 'next-auth' {
  * ตอนนี้เป็น mock user สำหรับ dev, เปลี่ยนเป็นเรียก API จริงได้ใน authorize()
  */
 export const { handlers, signIn, signOut, auth } = NextAuth({
+    // ต้องมี secret สำหรับเข้ารหัส JWT/session และ token ภายในของ Auth.js
+    secret: process.env.AUTH_SECRET,
+
     providers: [
         Credentials({
             // ฟิลด์ที่จะแสดงในฟอร์ม (ใช้เฉพาะ built-in page ถ้าไม่ได้สร้าง custom)

@@ -2,7 +2,7 @@ import { auth } from '@/lib/auth';
 import { NextResponse } from 'next/server';
 
 /**
- * Middleware — บังคับ login ทุกหน้า
+ * Proxy (เดิมคือ middleware) — บังคับ login ทุกหน้า
  * ถ้ายังไม่ login จะ redirect ไปหน้า /login พร้อมส่ง callbackUrl กลับ
  */
 export default auth((req) => {
@@ -10,7 +10,7 @@ export default auth((req) => {
 
     const isLoggedIn = !!req.auth?.user;
 
-    // ถ้ายังไม่ login → redirect ไป /login
+    // ถ้ายังไม่ login -> redirect ไป /login
     if (!isLoggedIn) {
         const loginUrl = new URL('/login', nextUrl.origin);
         loginUrl.searchParams.set('callbackUrl', nextUrl.pathname);

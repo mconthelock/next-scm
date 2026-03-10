@@ -1,35 +1,39 @@
 const fs = require('fs');
 const path = require('path');
-const { faker } = require('@faker-js/faker');
 
 // Import Templates
-const createVendor = require('./schemas/vendors');
-const createVendorCode = require('./schemas/vendors_code');
+const userTemplate = require('./schemas/users');
+const { createUserGroup, GROUP_DEFINITIONS } = require('./schemas/users_group');
+const { createMenuUser, MENU_DEFINITIONS } = require('./schemas/menu');
 
 const generateDB = () => {
-    const db = { vendors: [] };
+    const db = {
+        users: [],
+        users_group: [],
+        authen: [],
+    };
 
-    //Create Vendor data
-    const usedCodes = new Set();
-    let codeIdCounter = 1;
-    for (let i = 1; i <= 1250; i++) {
-        const vendor = createVendor(i);
-        const codeCount = faker.number.int({ min: 1, max: 3 });
-
-        for (let j = 0; j < codeCount; j++) {
-            let uniqueCode;
-            do {
-                uniqueCode = faker.number
-                    .int({ min: 10000, max: 99999 })
-                    .toString();
-            } while (usedCodes.has(uniqueCode));
-            usedCodes.add(uniqueCode);
-
-            const newCode = createVendorCode(vendor.VND_ID, uniqueCode);
-            vendor.VENDOR_CODES.push(newCode);
+    let userGroupId = 1;
+    for (let i = 1; i <= 10; i++) {
+        const assignedGroup =
+            GROUP_DEFINITIONS[(i - 1) % GROUP_DEFINITIONS.length];
+        if (i <= 3) {
+            db.users_group.push(createUserGroup(userGroupId, i, assignedGroup));
         }
-        db.vendors.push(vendor);
+        db.users.push(
+            userTemplate(i, [
+                {
+                    GRP_ID: assignedGroup.GRP_ID,
+                    GRP_CODE: assignedGroup.GRP_CODE,
+                    GRP_NAME: assignedGroup.GRP_NAME,
+                },
+            ]),
+        );
+
+        userGroupId += 1;
     }
+    db.authen = createMenuUser(MENU_DEFINITIONS);
+
     return db;
 };
 

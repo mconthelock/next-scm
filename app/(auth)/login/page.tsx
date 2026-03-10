@@ -19,19 +19,10 @@ function LoginForm() {
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
-    const [rememberMe, setRememberMe] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState(
         errorParam ? 'Username หรือ Password ไม่ถูกต้อง' : '',
     );
-
-    useEffect(() => {
-        const savedUsername = localStorage.getItem('rememberedUsername');
-        if (savedUsername) {
-            setUsername(savedUsername);
-            setRememberMe(true);
-        }
-    }, []);
 
     async function handleSubmit(e: React.FormEvent) {
         e.preventDefault();
@@ -66,7 +57,7 @@ function LoginForm() {
                             onChange={(e) => setUsername(e.target.value)}
                             autoComplete="username"
                             required
-                            placeholder="กรอก username"
+                            placeholder="Username"
                         />
                     </Field>
                     <Field {...(error ? { 'data-invalid': true } : {})}>
@@ -134,7 +125,7 @@ export default function LoginPage() {
                 <div className="absolute inset-0 bg-black opacity-50"></div>
                 <div className="relative flex items-center justify-center h-full ">
                     <div className="text-center p-4">
-                        <div className="min-w-md flex items-center justify-center bg-slate-50 shadow-lg px-8 py-24">
+                        <div className="min-w-md flex items-center justify-center bg-slate-50 shadow-lg px-8 py-12">
                             <div className="w-full max-w-md">
                                 {/* Login header */}
                                 <div className="text-center mb-8">
@@ -158,8 +149,6 @@ export default function LoginPage() {
                                         <LoginForm />
                                     </Suspense>
                                 </div>
-
-                                <p className="text-[10px] text-center text-slate-400 mt-6 uppercase tracking-widest font-bold"></p>
                             </div>
                         </div>
                     </div>
