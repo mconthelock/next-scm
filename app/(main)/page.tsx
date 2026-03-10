@@ -1,19 +1,16 @@
 import Image from 'next/image';
 import { ChevronRight } from 'lucide-react';
+import { PageTitle } from '@/components/layout/PageTitle';
+
 export default function Home() {
     return (
-        <div className="flex flex-col min-h-screen bg-white font-sans text-[#333]">
-            <main className="flex-1 w-full max-w-7xl mx-auto px-4 py-12">
+        <>
+            <PageTitle
+                title="Supply Chain Management"
+                subtitle="ระบบจัดการห่วงโซ่อุปทานส่วนกลาง ออกแบบตามมาตรฐาน Mitsubishi Electric"
+            />
+            <div className="flex-1 p-6 lg:p-10 max-w-7xl mx-auto w-full">
                 <div className="animate-in fade-in duration-1000">
-                    <h1 className="text-3xl font-light mb-6 tracking-tight">
-                        Supply Chain Management
-                    </h1>
-                    <p className="text-slate-600 mb-8 max-w-2xl leading-relaxed">
-                        ระบบจัดการห่วงโซ่อุปทานส่วนกลาง ออกแบบตามมาตรฐาน
-                        Mitsubishi Electric พร้อมลูกเล่น Navbar
-                        สไลด์ซ่อนอัตโนมัติเมื่อเลื่อนหน้าจอลง (Smart Header)
-                    </p>
-
                     {/* Mockup content ยาวๆ เพื่อให้ทดสอบการเลื่อนหน้าจอได้ชัดเจน */}
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                         {Array.from({ length: 12 }).map((_, i) => (
@@ -30,7 +27,7 @@ export default function Home() {
                                 <p className="text-sm text-slate-500 mb-4">
                                     ข้อมูลวิเคราะห์ประสิทธิภาพการขนส่งและคลังสินค้าประจำภูมิภาคเอเชียตะวันออกเฉียงใต้
                                 </p>
-                                <div className="flex items-center text-[#E60012] text-[11px] font-bold uppercase tracking-widest gap-2">
+                                <div className="flex items-center text-brand text-[11px] font-bold uppercase tracking-widest gap-2">
                                     View Details{' '}
                                     <ChevronRight className="h-3 w-3" />
                                 </div>
@@ -38,7 +35,7 @@ export default function Home() {
                         ))}
                     </div>
                 </div>
-            </main>
-        </div>
+            </div>
+        </>
     );
 }

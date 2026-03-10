@@ -1,8 +1,7 @@
 import type { Metadata } from 'next';
 import { Noto_Sans_Thai, Roboto } from 'next/font/google';
 import './globals.css';
-import { Header } from '@/components/layout/Header';
-import { Footer } from '@/components/layout/Footer';
+import { SessionProvider } from '@/components/providers/SessionProvider';
 
 // โหลด Noto Sans Thai จาก Google Fonts ให้ใช้ทั้งระบบ
 const notoSansThai = Noto_Sans_Thai({
@@ -21,6 +20,10 @@ const roboto = Roboto({
 export const metadata: Metadata = {
     title: 'AMECSCM',
     description: 'Supply Chain Management System',
+    icons: {
+        icon: '/favicon.ico',
+        shortcut: '/favicon.ico',
+    },
 };
 
 export default function RootLayout({
@@ -33,15 +36,7 @@ export default function RootLayout({
             <body
                 className={`${notoSansThai.variable} ${roboto.variable} font-sans antialiased bg-slate-50 text-slate-900`}
             >
-                <div className="flex min-h-screen flex-col">
-                    <Header />
-                    <main className="flex-1 flex flex-col overflow-hidden">
-                        <div className="flex-1 p-6 lg:p-10 max-w-7xl mx-auto w-full">
-                            {children}
-                        </div>
-                        <Footer />
-                    </main>
-                </div>
+                <SessionProvider>{children}</SessionProvider>
             </body>
         </html>
     );

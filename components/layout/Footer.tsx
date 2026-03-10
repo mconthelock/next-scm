@@ -28,7 +28,7 @@ export function Footer() {
                                 <li>
                                     <a
                                         href="#"
-                                        className="hover:text-[#E60012]"
+                                        className="hover:text-brand"
                                     >
                                         Air Conditioning
                                     </a>
@@ -36,7 +36,7 @@ export function Footer() {
                                 <li>
                                     <a
                                         href="#"
-                                        className="hover:text-[#E60012]"
+                                        className="hover:text-brand"
                                     >
                                         Automotive
                                     </a>
@@ -44,7 +44,7 @@ export function Footer() {
                                 <li>
                                     <a
                                         href="#"
-                                        className="hover:text-[#E60012]"
+                                        className="hover:text-brand"
                                     >
                                         Factory Automation
                                     </a>
@@ -59,7 +59,7 @@ export function Footer() {
                                 <li>
                                     <a
                                         href="#"
-                                        className="hover:text-[#E60012]"
+                                        className="hover:text-brand"
                                     >
                                         Our History
                                     </a>
@@ -67,7 +67,7 @@ export function Footer() {
                                 <li>
                                     <a
                                         href="#"
-                                        className="hover:text-[#E60012]"
+                                        className="hover:text-brand"
                                     >
                                         Sustainability
                                     </a>
@@ -82,7 +82,7 @@ export function Footer() {
                                 <li>
                                     <a
                                         href="#"
-                                        className="hover:text-[#E60012]"
+                                        className="hover:text-brand"
                                     >
                                         Contact Us
                                     </a>
@@ -90,7 +90,7 @@ export function Footer() {
                                 <li>
                                     <a
                                         href="#"
-                                        className="hover:text-[#E60012]"
+                                        className="hover:text-brand"
                                     >
                                         Legal Notice
                                     </a>
@@ -108,10 +108,10 @@ export function Footer() {
                         Ltd.
                     </p>
                     <div className="flex gap-6">
-                        <a href="#" className="hover:text-[#E60012]">
+                        <a href="#" className="hover:text-brand">
                             Privacy Policy
                         </a>
-                        <a href="#" className="hover:text-[#E60012]">
+                        <a href="#" className="hover:text-brand">
                             Terms of Use
                         </a>
                     </div>

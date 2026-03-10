@@ -45,10 +45,70 @@
     --radius-2xl: calc(var(--radius) + 8px);
     --radius-3xl: calc(var(--radius) + 12px);
     --radius-4xl: calc(var(--radius) + 16px);
+
+    /* ===== Brand Design Tokens ===== */
+
+    /* สีหลักของแบรนด์ Mitsubishi — แดง */
+    --color-brand: var(--brand);
+    --color-brand-hover: var(--brand-hover);
+    --color-brand-ring: var(--brand-ring);
+
+    /* สีข้อความ — ระดับต่างๆ ที่ใช้ซ้ำทั่วทั้ง app */
+    --color-text-heading: var(--text-heading);
+    --color-text-body: var(--text-body);
+    --color-text-muted: var(--text-muted);
+    --color-text-link: var(--text-link);
+
+    /* สีพื้นหลังหน้า / card / surface */
+    --color-surface: var(--surface);
+    --color-surface-elevated: var(--surface-elevated);
+    --color-surface-inset: var(--surface-inset);
+
+    /* Page Title / Hero Banner */
+    --color-page-title-from: var(--page-title-from);
+    --color-page-title-to: var(--page-title-to);
+    --color-page-title-overlay: var(--page-title-overlay);
+
+    /* Label สไตล์ — ใช้กับ form label, section label */
+    --font-size-label: var(--fs-label);
+    --tracking-label: var(--tracking-label);
+
+    /* Content container */
+    --container-max: var(--container-max);
 }
 
 :root {
     --radius: 0.625rem;
+
+    /* ===== Brand Colors ===== */
+    --brand: #e60012;
+    --brand-hover: #c5000f;
+    --brand-ring: #e60012 / 30%;
+
+    /* ===== Text Colors ===== */
+    --text-heading: oklch(0.279 0.014 256.848); /* slate-800 */
+    --text-body: oklch(0.554 0.019 257.242); /* slate-500 */
+    --text-muted: oklch(0.646 0.018 264.436); /* slate-400 */
+    --text-link: #e60012;
+
+    /* ===== Surface / Background ===== */
+    --surface: oklch(0.968 0.007 264.436); /* slate-50 */
+    --surface-elevated: #ffffff; /* white cards */
+    --surface-inset: oklch(0.968 0.007 264.436); /* slate-50 inset areas */
+
+    /* ===== Page Title / Hero ===== */
+    --page-title-from: oklch(0.279 0.014 256.848); /* slate-800 */
+    --page-title-to: oklch(0.208 0.013 264.531); /* slate-900 */
+    --page-title-overlay: rgb(0 0 0 / 50%);
+
+    /* ===== Typography Tokens ===== */
+    --fs-label: 0.6875rem; /* 11px — ใช้กับ label uppercase */
+    --tracking-label: 0.1em; /* tracking-widest */
+
+    /* ===== Layout ===== */
+    --container-max: 80rem; /* max-w-7xl = 1280px */
+
+    /* ===== ShadCN defaults ===== */
     --background: oklch(1 0 0);
     --foreground: oklch(0.145 0 0);
     --card: oklch(1 0 0);
