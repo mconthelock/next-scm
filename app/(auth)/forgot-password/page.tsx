@@ -54,27 +54,35 @@ function ForgotPasswordForm() {
 
 export default function ForgotPasswordPage() {
     return (
-        <div className="min-h-screen bg-slate-50 flex items-center justify-center px-4">
-            <div className="w-full max-w-md rounded-2xl bg-white p-8 shadow-lg border border-slate-200">
-                <div className="mb-8 text-center">
-                    <h1 className="text-xl font-bold text-slate-800">
-                        Forgot Password
-                    </h1>
-                    <p className="mt-2 text-sm text-slate-500">
-                        กรอก username หรือ email
-                        เพื่อรับลิงก์สำหรับรีเซ็ตรหัสผ่าน
-                    </p>
-                </div>
+        <div
+            className="relative h-screen bg-cover bg-center"
+            style={{
+                backgroundImage: "url('/bg_pagetitle_01_lg.jpg')",
+            }}
+        >
+            <div className="absolute inset-0 bg-black opacity-50"></div>
+            <div className="relative flex items-center justify-center h-full">
+                <div className="w-full max-w-md rounded-2xl bg-white p-8 shadow-lg border border-slate-200">
+                    <div className="mb-8 text-center">
+                        <h1 className="text-xl font-bold text-slate-800">
+                            Forgot Password
+                        </h1>
+                        <p className="mt-2 text-sm text-slate-500">
+                            กรอก username หรือ email
+                            เพื่อรับลิงก์สำหรับรีเซ็ตรหัสผ่าน
+                        </p>
+                    </div>
 
-                <Suspense
-                    fallback={
-                        <div className="text-center text-sm text-slate-400">
-                            Loading...
-                        </div>
-                    }
-                >
-                    <ForgotPasswordForm />
-                </Suspense>
+                    <Suspense
+                        fallback={
+                            <div className="text-center text-sm text-slate-400">
+                                Loading...
+                            </div>
+                        }
+                    >
+                        <ForgotPasswordForm />
+                    </Suspense>
+                </div>
             </div>
         </div>
     );

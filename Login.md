@@ -12,6 +12,7 @@
 2. ส่งข้อมูลไปตรวจสอบกับ NextAuth
 3. ให้ NextAuth ไปเรียกข้อมูลผู้ใช้จาก mock API ที่รันด้วย `json-server`
 4. หลัง Login สำเร็จ ระบบจะสร้าง session และดึงเมนูตามกลุ่มผู้ใช้มาแสดงใน Header
+5. ถ้า password หมดอายุ ระบบจะยังไม่สร้าง session แต่จะบังคับให้ไปหน้า Change Password ก่อน
 
 สรุปแบบสั้นมาก
 
@@ -63,8 +64,17 @@ npm run dev:all
 - `app/(auth)/login/page.tsx`
   หน้า Login ที่ผู้ใช้กรอกข้อมูล
 
+- `app/(auth)/change-password/page.tsx`
+  หน้าเปลี่ยนรหัสผ่านที่ใช้ในกรณี password หมดอายุและต้องเปลี่ยนก่อนเข้าใช้งาน
+
 - `app/api/auth/[...nextauth]/route.ts`
   route ที่ NextAuth ใช้รับ request เช่น sign in, sign out, session
+
+- `app/api/auth/password-reset-ticket/route.ts`
+  route สำหรับออก reset ticket ชั่วคราวหลังยืนยันว่าผู้ใช้กรอกรหัสเดิมถูกและ password หมดอายุจริง
+
+- `app/api/auth/change-password/route.ts`
+  route สำหรับตรวจ ticket และบันทึกรหัสผ่านใหม่
 
 - `app/api/menu/me/route.ts`
   route สำหรับคืนเมนูของผู้ใช้ที่ login อยู่ โดยอ่านกลุ่มจาก session
@@ -93,6 +103,15 @@ npm run dev:all
 
 - `lib/auth.ts`
   หัวใจของระบบ login และ session
+
+- `lib/password-utils.ts`
+  รวมฟังก์ชัน hash password, ตรวจวันหมดอายุ และตรวจ password policy
+
+- `lib/password-reset-ticket.ts`
+  สร้างและตรวจสอบ reset ticket แบบ signed token อายุสั้น
+
+- `lib/user-store.ts`
+  อ่านและเขียน `db.json` โดยตรงตอนเปลี่ยนรหัสผ่านและเลื่อนประวัติรหัสผ่าน
 
 - `lib/menu.ts`
   รวม type และข้อมูลเมนูที่ใช้ร่วมกัน
@@ -154,6 +173,7 @@ npm run dev:all
 
 - `USR_LOGIN`: username
 - `USR_PASSWORD`: รหัสผ่านแบบ MD5 hash
+- `USR_PASSWORD1`, `USR_PASSWORD2`, `USR_PASSWORD3`: ประวัติรหัสผ่านย้อนหลัง 3 ครั้ง
 - `USR_NAME`: ชื่อผู้ใช้
 - `USR_EMAIL`: อีเมล
 - `USR_POSITION`: ตำแหน่งงาน
@@ -245,12 +265,13 @@ npm run dev:all
 
 1. หน้า login แสดงฟอร์มให้กรอก `username` และ `password`
 2. อ่าน `callbackUrl` จาก query string
-3. ถ้ามี error code เกี่ยวกับ password หมดอายุจากรอบก่อน หน้า login จะแสดงข้อความเตือนให้เปลี่ยนรหัสผ่านก่อน
+3. ถ้ามี query string ว่าเพิ่งเปลี่ยนรหัสผ่านสำเร็จ หน้า login จะแสดงข้อความ success
 4. เมื่อกด submit จะเรียก `signIn('credentials', ...)`
 5. มีการส่งข้อมูลไปยัง NextAuth โดยไม่ redirect ทันที เพราะกำหนด `redirect: false`
-6. ถ้า password หมดอายุ ระบบจะพาไปหน้า `/forgot-password` พร้อมส่ง `username`, `callbackUrl` และ `reason=password-expired`
-7. ถ้า login ไม่ผ่าน จะแสดงข้อความผิดพลาดบนฟอร์ม
-8. ถ้า login ผ่าน จะ redirect ด้วย `window.location.href = callbackUrl`
+6. ถ้า password หมดอายุ ระบบจะเรียก `/api/auth/password-reset-ticket` เพื่อขอ reset ticket
+7. ถ้าได้ ticket แล้ว ระบบจะพาไปหน้า `/change-password?token=...`
+8. ถ้า login ไม่ผ่าน จะแสดงข้อความผิดพลาดบนฟอร์ม
+9. ถ้า login ผ่าน จะ redirect ด้วย `window.location.href = callbackUrl`
 
 ## 8. Flow ของ NextAuth ในระบบนี้
 
@@ -312,16 +333,81 @@ npm run dev:all
 4. error นี้สืบทอดจาก `CredentialsSignin`
 5. จึงทำให้ NextAuth ส่ง code กลับมาว่า `password-reset-required`
 6. หน้า login ตรวจ `result.code` หลัง `signIn(..., { redirect: false })`
-7. ถ้า code ตรงกัน จะ redirect ไปหน้า forgot password ทันที
-8. หน้า forgot password จะเติม username ให้และแสดงข้อความอธิบายว่าต้องรีเซ็ตรหัสผ่านก่อน
+7. ถ้า code ตรงกัน หน้า login จะส่ง `username` และ `password` เดิมไปที่ `/api/auth/password-reset-ticket`
+8. API นี้จะยืนยันอีกครั้งว่ารหัสถูกต้องและบัญชีนี้ต้องเปลี่ยนรหัสผ่านจริง
+9. ถ้าผ่าน ระบบจะสร้าง reset ticket อายุสั้นและส่งกลับมา
+10. หน้า login จะ redirect ไป `/change-password` พร้อม `token`, `callbackUrl` และ `reason=password-expired`
+11. ตลอด flow นี้จะยังไม่มี session ถูกสร้างขึ้น เพราะ `authorize()` ไม่ได้ return user
 
 แนวทางนี้มีข้อดีคือ
 
 - แยกกรณี “กรอกรหัสผิด” ออกจาก “รหัสผ่านหมดอายุ” ได้ชัดเจน
 - ฝั่ง client แสดงข้อความและ redirect ได้ตรงกับสาเหตุจริง
+- ผู้ใช้จะยังไม่ถือว่า login สำเร็จจนกว่าจะเปลี่ยนรหัสผ่านเสร็จ
 - ฝั่ง server ยังคุมกติกาความปลอดภัยไว้ใน `authorize()`
 
-### 8.5 ทำไมต้อง map ข้อมูลด้วย `mapUserToSessionUser()`
+### 8.5 Reset Ticket คืออะไร
+
+reset ticket คือ token ชั่วคราวที่ใช้อนุญาตให้ผู้ใช้เข้า flow เปลี่ยนรหัสผ่านได้โดยยังไม่ต้องมี session
+
+ข้อมูลที่เก็บอยู่ใน ticket มีอย่างน้อย
+
+- `username`
+- `passwordHash`
+- `expiresAt`
+
+แนวคิดสำคัญของ ticket นี้คือ
+
+- ถูก sign ด้วย `AUTH_SECRET`
+- มีอายุสั้น 10 นาที
+- ผูกกับ hash ของรหัสผ่านปัจจุบัน
+
+ผลคือถ้าผู้ใช้เปลี่ยนรหัสผ่านไปแล้ว ticket เก่าจะใช้ไม่ได้ทันที เพราะ `passwordHash` ในฐานข้อมูลไม่ตรงกับค่าเดิมอีกต่อไป
+
+### 8.6 หน้า Change Password ทำงานอย่างไร
+
+ไฟล์ที่เกี่ยวข้องคือ `app/(auth)/change-password/page.tsx`
+
+ลำดับการทำงาน
+
+1. หน้าอ่าน `token` จาก query string
+2. เรียก `GET /api/auth/change-password?token=...` เพื่อตรวจ ticket
+3. ถ้า ticket ใช้งานได้ ระบบจะคืน `username` และ `displayName`
+4. หน้าแสดงฟอร์มกรอกรหัสผ่านใหม่และยืนยันรหัสผ่าน
+5. เมื่อ submit จะเรียก `POST /api/auth/change-password`
+6. API จะตรวจ ticket อีกรอบ ตรวจว่า `newPassword` กับ `confirmPassword` ตรงกัน และตรวจ password policy
+7. ถ้าผ่าน ระบบจะเขียนรหัสผ่านใหม่ลง `db.json`
+8. จากนั้น redirect กลับหน้า `/login?message=password-changed`
+
+### 8.7 Password Policy ที่ใช้อยู่ตอนนี้
+
+logic อยู่ใน `lib/password-utils.ts`
+
+กติกาที่ใช้มีดังนี้
+
+1. ความยาวอย่างน้อย 14 ตัวอักษร
+2. ต้องมีตัวพิมพ์เล็กภาษาอังกฤษอย่างน้อย 1 ตัว
+3. ต้องมีตัวพิมพ์ใหญ่ภาษาอังกฤษอย่างน้อย 1 ตัว
+4. ต้องมีตัวเลขอย่างน้อย 1 ตัว
+5. ต้องมีอักขระพิเศษอย่างน้อย 1 ตัว
+6. ต้องไม่เป็น pattern เรียงหรือซ้ำเดาง่าย เช่น `abcd`, `1234`, หรืออักขระเดิมซ้ำยาวเกินไป
+7. ต้องไม่เป็นคำที่เดาง่าย หรือมี username ปนอยู่ใน password
+8. ต้องไม่ซ้ำกับรหัสผ่านปัจจุบันและประวัติรหัสผ่านเดิม 3 ครั้งล่าสุด
+
+### 8.8 ตอนเปลี่ยนรหัสผ่าน ระบบเขียนอะไรกลับลงฐานข้อมูล
+
+logic อยู่ใน `lib/user-store.ts`
+
+เมื่อเปลี่ยนรหัสผ่านสำเร็จ ระบบจะ
+
+1. เอา hash ใหม่ไปใส่ `USR_PASSWORD`
+2. เลื่อน `USR_PASSWORD` เดิมไปเก็บใน `USR_PASSWORD1`
+3. เลื่อนค่าก่อนหน้าไปที่ `USR_PASSWORD2` และ `USR_PASSWORD3`
+4. ตั้ง `USR_RESETDATE` ใหม่เป็น 90 วันถัดไป
+
+ดังนั้นระบบจึงตรวจประวัติรหัสผ่านย้อนหลังได้ในรอบถัดไป
+
+### 8.9 ทำไมต้อง map ข้อมูลด้วย `mapUserToSessionUser()`
 
 เพราะข้อมูลใน `db.json` ใช้ชื่อ field แบบ backend เช่น
 
@@ -403,6 +489,7 @@ export const { GET, POST } = handlers;
 
 - `/login`
 - `/forgot-password`
+- `/change-password`
 - `/about`
 - `/api/auth/*`
 - static files
@@ -539,7 +626,7 @@ route นี้เป็น server API ของ Next.js
 6. `json-server` อ่านข้อมูลจาก `db.json`
 7. ถ้า username และ password ถูกต้อง ระบบจะตรวจ `USR_RESETDATE`
 8. ถ้า password หมดอายุ ระบบจะตอบกลับด้วย code `password-reset-required`
-9. หน้า login จะ redirect ผู้ใช้ไป `/forgot-password` พร้อมข้อมูลที่จำเป็น
+9. หน้า login จะเรียก `/api/auth/password-reset-ticket` เพื่อขอ ticket ชั่วคราว
 10. ถ้า password ยังใช้งานได้ NextAuth จะสร้าง JWT/session
 11. callback `jwt()` และ `session()` เติม `role`, `department`, `groupId`, `groupCode`
 12. หน้า login พา user ไป `callbackUrl`
@@ -550,15 +637,21 @@ route นี้เป็น server API ของ Next.js
 2. `authorize()` ตรวจพบว่า `USR_RESETDATE` หมดอายุแล้ว
 3. ระบบโยน `PasswordResetRequiredError`
 4. `signIn(..., { redirect: false })` ได้ `result.code === 'password-reset-required'`
-5. หน้า login สร้าง URL ไปหน้า reset password แบบนี้
+5. หน้า login เรียก `POST /api/auth/password-reset-ticket`
+6. route นี้ตรวจ username/password กับข้อมูลใน `db.json` ซ้ำอีกครั้ง และตรวจว่า password หมดอายุจริง
+7. ถ้าผ่าน route จะสร้าง signed ticket อายุสั้นกลับมา
+8. หน้า login redirect ไปหน้า change password แบบนี้
 
 ```text
-/forgot-password?callbackUrl=/หน้าที่จะกลับไป&username=<username>&reason=password-expired
+/change-password?callbackUrl=/หน้าที่จะกลับไป&token=<reset-ticket>&reason=password-expired
 ```
 
-6. หน้า forgot password อ่าน query string ด้วย `useSearchParams()`
-7. ช่อง username ถูกเติมค่าให้อัตโนมัติ
-8. มีข้อความแจ้งว่ารหัสผ่านหมดอายุและต้องรีเซ็ตก่อนเข้าสู่ระบบอีกครั้ง
+9. หน้า `change-password` เรียก `GET /api/auth/change-password?token=...` เพื่อตรวจ ticket
+10. ถ้า ticket ผ่าน ผู้ใช้จึงเห็นฟอร์มกรอกรหัสผ่านใหม่
+11. เมื่อ submit หน้า `change-password` จะเรียก `POST /api/auth/change-password`
+12. API จะตรวจ password policy และตรวจไม่ให้ซ้ำกับ `USR_PASSWORD`, `USR_PASSWORD1`, `USR_PASSWORD2`, `USR_PASSWORD3`
+13. ถ้าสำเร็จ ระบบจะบันทึกลง `db.json` และพากลับหน้า login พร้อมข้อความสำเร็จ
+14. หลังจากนั้นผู้ใช้ต้อง login ใหม่ด้วยรหัสผ่านใหม่ จึงจะได้ session จริง
 
 ### Flow B: เปิดหน้าภายในระบบหลัง login
 
@@ -592,6 +685,32 @@ route นี้เป็น server API ของ Next.js
 - `authorize()`
 - `getUserByUsername()`
 - `hashPassword()`
+
+### อยากเปลี่ยนกติกา password policy หรือจำนวนวันหมดอายุ
+
+แก้ที่
+
+- `lib/password-utils.ts`
+
+โดยเฉพาะ
+
+- `validatePasswordPolicy()`
+- `isPasswordResetRequired()`
+- `getNextPasswordResetDate()`
+
+### อยากเปลี่ยนวิธีออก ticket หรืออายุของ ticket
+
+แก้ที่
+
+- `lib/password-reset-ticket.ts`
+- `app/api/auth/password-reset-ticket/route.ts`
+- `app/api/auth/change-password/route.ts`
+
+### อยากเปลี่ยนวิธีบันทึกรหัสผ่านลง mock database
+
+แก้ที่
+
+- `lib/user-store.ts`
 
 ### อยากเปลี่ยนโครงสร้างข้อมูลเมนู
 
@@ -654,6 +773,16 @@ npm run dev:all
 
 ถ้ายังกรอกรหัสถูกแต่เข้าไม่ได้ ให้ตรวจต่อว่า user อาจติดเงื่อนไข `USR_RESETDATE` และถูกบังคับไป flow เปลี่ยนรหัสผ่านหรือไม่
 
+### 19.1.1 Login ผ่านรหัสเดิมได้ แต่ถูกพาไป Change Password
+
+กรณีนี้ถือเป็นพฤติกรรมปกติ ถ้า `USR_RESETDATE` หมดอายุแล้ว
+
+สิ่งสำคัญคือ
+
+- ผู้ใช้ยังไม่ได้ session
+- ผู้ใช้ต้องเปลี่ยนรหัสผ่านให้สำเร็จก่อน
+- หลังเปลี่ยนรหัสผ่านแล้ว ต้องกลับมา login ใหม่ด้วยรหัสผ่านใหม่
+
 ### 19.2 เปิดหน้าแล้วโดนเด้งกลับ login ตลอด
 
 ให้ตรวจว่า
@@ -671,7 +800,7 @@ npm run dev:all
 
 ถ้าจะจำ flow นี้ให้จำประโยคเดียว
 
-> หน้า Login ส่ง username/password ไปให้ NextAuth, NextAuth ไปอ่าน user จาก `json-server`, ตรวจทั้งรหัสผ่านและวันหมดอายุของรหัสผ่าน, จากนั้นจึงสร้าง session ที่มี `groupId`, แล้ว Header ใช้ `groupId` นี้ไปดึงเมนูของผู้ใช้จาก `/api/menu/me`
+> หน้า Login ส่ง username/password ไปให้ NextAuth, NextAuth ไปอ่าน user จาก `json-server`, ถ้า password ยังใช้ได้จึงสร้าง session ที่มี `groupId`, แต่ถ้า password หมดอายุระบบจะออก reset ticket ชั่วคราว พาไปหน้า Change Password และจะยังไม่ถือว่า login สำเร็จจนกว่าจะเปลี่ยนรหัสผ่านเสร็จ จากนั้น Header จึงใช้ `groupId` ไปดึงเมนูของผู้ใช้จาก `/api/menu/me`
 
 ถ้าจะอ่านโค้ดต่อเอง แนะนำลำดับนี้
 

@@ -24,6 +24,7 @@ export default auth((req) => {
  * matcher — ไม่ apply กับ:
  * - /login (หน้า login)
  * - /forgot-password (หน้า reset password)
+ * - /change-password (หน้าเปลี่ยนรหัสผ่าน)
  * - /api/auth/* (NextAuth API routes)
  * - /_next/* (Next.js internal)
  * - /favicon.ico, /logo.svg, /images/* (static files)
@@ -31,6 +32,6 @@ export default auth((req) => {
  */
 export const config = {
     matcher: [
-        '/((?!login|forgot-password|api/auth|_next/static|_next/image|about|favicon\\.ico|logo\\.svg|images|.*\\.(?:jpg|jpeg|png|gif|svg|webp|ico)$).*)',
+        '/((?!login|forgot-password|change-password|api/auth|_next/static|_next/image|about|favicon\\.ico|logo\\.svg|images|.*\\.(?:jpg|jpeg|png|gif|svg|webp|ico)$).*)',
     ],
 };

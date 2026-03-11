@@ -1,7 +1,7 @@
 import NextAuth, { type DefaultSession } from 'next-auth';
-import { createHash } from 'node:crypto';
 import { CredentialsSignin } from 'next-auth';
 import Credentials from 'next-auth/providers/credentials';
+import { hashPassword, isPasswordResetRequired } from '@/lib/password-utils';
 
 declare module 'next-auth' {
     interface User {
@@ -43,24 +43,6 @@ class PasswordResetRequiredError extends CredentialsSignin {
 }
 
 const API_BASE_URL = process.env.API_BASE_URL ?? 'http://127.0.0.1:3002';
-
-function hashPassword(password: string) {
-    return createHash('md5').update(password).digest('hex');
-}
-
-function isPasswordResetRequired(resetDate?: string) {
-    if (!resetDate) {
-        return false;
-    }
-
-    const parsedResetDate = new Date(resetDate);
-
-    if (Number.isNaN(parsedResetDate.getTime())) {
-        return false;
-    }
-
-    return parsedResetDate.getTime() <= Date.now();
-}
 
 async function getUserByUsername(username: string) {
     const response = await fetch(
