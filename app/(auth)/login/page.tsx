@@ -3,7 +3,7 @@
 import { signIn } from 'next-auth/react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import React, { useState, useEffect, Suspense } from 'react';
+import React, { useState, Suspense } from 'react';
 import { Field, FieldGroup, FieldLabel, FieldSet } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -14,15 +14,24 @@ function LoginForm() {
     const searchParams = useSearchParams();
     const callbackUrl = searchParams.get('callbackUrl') || '/';
     const errorParam = searchParams.get('error');
+    const codeParam = searchParams.get('code');
     const forgotPasswordHref = `/forgot-password?callbackUrl=${encodeURIComponent(callbackUrl)}`;
 
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
-    const [error, setError] = useState(
-        errorParam ? 'Username หรือ Password ไม่ถูกต้อง' : '',
-    );
+    const [error, setError] = useState(() => {
+        if (codeParam === 'password-reset-required') {
+            return 'รหัสผ่านหมดอายุ กรุณาเปลี่ยนรหัสผ่านก่อนเข้าสู่ระบบ';
+        }
+
+        if (errorParam) {
+            return 'Username หรือ Password ไม่ถูกต้อง';
+        }
+
+        return '';
+    });
 
     async function handleSubmit(e: React.FormEvent) {
         e.preventDefault();
@@ -35,6 +44,12 @@ function LoginForm() {
             callbackUrl,
             redirect: false,
         });
+
+        if (result?.code === 'password-reset-required') {
+            const forcedResetHref = `/forgot-password?callbackUrl=${encodeURIComponent(callbackUrl)}&username=${encodeURIComponent(username)}&reason=password-expired`;
+            window.location.href = forcedResetHref;
+            return;
+        }
 
         if (result?.error) {
             setError('Username หรือ Password ไม่ถูกต้อง');
@@ -123,7 +138,7 @@ export default function LoginPage() {
                 }}
             >
                 <div className="absolute inset-0 bg-black opacity-50"></div>
-                <div className="relative flex items-center justify-center h-full ">
+                <div className="relative flex items-center justify-center h-full">
                     <div className="text-center p-4">
                         <div className="min-w-md flex items-center justify-center bg-slate-50 shadow-lg px-8 py-12">
                             <div className="w-full max-w-md">

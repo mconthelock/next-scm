@@ -7,7 +7,7 @@ import { Field, FieldGroup, FieldLabel, FieldSet } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 
-function ForgotPasswordForm() {
+function ChangePasswordForm() {
     const searchParams = useSearchParams();
     const callbackUrl = searchParams.get('callbackUrl') || '/';
     const username = searchParams.get('username') || '';
@@ -52,13 +52,13 @@ function ForgotPasswordForm() {
     );
 }
 
-export default function ForgotPasswordPage() {
+export default function ChangePasswordPage() {
     return (
         <div className="min-h-screen bg-slate-50 flex items-center justify-center px-4">
             <div className="w-full max-w-md rounded-2xl bg-white p-8 shadow-lg border border-slate-200">
                 <div className="mb-8 text-center">
                     <h1 className="text-xl font-bold text-slate-800">
-                        Forgot Password
+                        Change Password
                     </h1>
                     <p className="mt-2 text-sm text-slate-500">
                         กรอก username หรือ email
@@ -73,7 +73,7 @@ export default function ForgotPasswordPage() {
                         </div>
                     }
                 >
-                    <ForgotPasswordForm />
+                    <ChangePasswordForm />
                 </Suspense>
             </div>
         </div>

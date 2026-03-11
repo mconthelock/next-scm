@@ -1,20 +1,99 @@
-import NextAuth from 'next-auth';
+import NextAuth, { type DefaultSession } from 'next-auth';
+import { createHash } from 'node:crypto';
+import { CredentialsSignin } from 'next-auth';
 import Credentials from 'next-auth/providers/credentials';
 
-// ขยาย type ของ next-auth เพื่อเพิ่ม role และ department
 declare module 'next-auth' {
-    /** ข้อมูล session.user ที่จะเข้าถึงได้ใน client */
     interface User {
         role?: string;
         department?: string;
+        groupId?: number;
+        groupCode?: string;
     }
+
+    interface Session {
+        user: {
+            role?: string;
+            department?: string;
+            groupId?: number;
+            groupCode?: string;
+        } & DefaultSession['user'];
+    }
+}
+
+/** โครงสร้าง user ที่ได้กลับมาจาก json-server */
+interface ApiUser {
+    USR_ID: number;
+    USR_LOGIN: string;
+    USR_PASSWORD: string;
+    USR_NAME: string;
+    USR_EMAIL: string;
+    USR_POSITION: string;
+    USER_STATUS: number;
+    USR_RESETDATE?: string;
+    GROUPS?: Array<{
+        GRP_ID: number;
+        GRP_CODE: string;
+        GRP_NAME: string;
+    }>;
+}
+
+class PasswordResetRequiredError extends CredentialsSignin {
+    code = 'password-reset-required';
+}
+
+const API_BASE_URL = process.env.API_BASE_URL ?? 'http://127.0.0.1:3002';
+
+function hashPassword(password: string) {
+    return createHash('md5').update(password).digest('hex');
+}
+
+function isPasswordResetRequired(resetDate?: string) {
+    if (!resetDate) {
+        return false;
+    }
+
+    const parsedResetDate = new Date(resetDate);
+
+    if (Number.isNaN(parsedResetDate.getTime())) {
+        return false;
+    }
+
+    return parsedResetDate.getTime() <= Date.now();
+}
+
+async function getUserByUsername(username: string) {
+    const response = await fetch(
+        `${API_BASE_URL}/users?USR_LOGIN=${encodeURIComponent(username)}`,
+        {
+            cache: 'no-store',
+        },
+    );
+
+    if (!response.ok) {
+        throw new Error('Unable to fetch users from API');
+    }
+
+    const users = (await response.json()) as ApiUser[];
+    return users[0] ?? null;
+}
+
+function mapUserToSessionUser(user: ApiUser) {
+    return {
+        id: String(user.USR_ID),
+        name: user.USR_NAME,
+        email: user.USR_EMAIL,
+        role: user.GROUPS?.[0]?.GRP_NAME ?? '',
+        department: user.USR_POSITION,
+        groupId: user.GROUPS?.[0]?.GRP_ID,
+        groupCode: user.GROUPS?.[0]?.GRP_CODE ?? '',
+    };
 }
 
 /**
  * NextAuth configuration
  *
  * ใช้ Credentials provider (username + password) — คล้ายกับ Passport Local Strategy
- * ตอนนี้เป็น mock user สำหรับ dev, เปลี่ยนเป็นเรียก API จริงได้ใน authorize()
  */
 export const { handlers, signIn, signOut, auth } = NextAuth({
     // ต้องมี secret สำหรับเข้ารหัส JWT/session และ token ภายในของ Auth.js
@@ -30,7 +109,6 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
 
             /**
              * authorize — ตรวจสอบ username/password
-             * TODO: เปลี่ยนเป็นเรียก API จริง หรือเช็คกับ database
              */
             async authorize(credentials) {
                 const { username, password } = credentials as {
@@ -38,42 +116,35 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
                     password: string;
                 };
 
-                // --- Mock users สำหรับทดสอบ ---
-                const mockUsers = [
-                    {
-                        id: '1',
-                        username: 'admin',
-                        password: 'admin123',
-                        name: 'Somsak Mitsubishi',
-                        email: 'somsak@mea.co.th',
-                        role: 'Administrator',
-                        department: 'SCM Department',
-                    },
-                    {
-                        id: '2',
-                        username: 'user',
-                        password: 'user123',
-                        name: 'Somchai Test',
-                        email: 'somchai@mea.co.th',
-                        role: 'User',
-                        department: 'Logistics',
-                    },
-                ];
+                if (!username || !password) {
+                    return null;
+                }
 
-                const user = mockUsers.find(
-                    (u) => u.username === username && u.password === password,
-                );
+                try {
+                    const user = await getUserByUsername(username);
 
-                if (!user) return null;
+                    if (!user || user.USER_STATUS !== 1) {
+                        return null;
+                    }
 
-                // ส่งกลับ user object (จะถูกเก็บใน JWT token)
-                return {
-                    id: user.id,
-                    name: user.name,
-                    email: user.email,
-                    role: user.role,
-                    department: user.department,
-                };
+                    if (user.USR_PASSWORD !== hashPassword(password)) {
+                        return null;
+                    }
+
+                    if (isPasswordResetRequired(user.USR_RESETDATE)) {
+                        throw new PasswordResetRequiredError();
+                    }
+
+                    // ส่งกลับ user object (จะถูกเก็บใน JWT token)
+                    return mapUserToSessionUser(user);
+                } catch (error) {
+                    if (error instanceof PasswordResetRequiredError) {
+                        throw error;
+                    }
+
+                    console.error('Authorize failed', error);
+                    return null;
+                }
             },
         }),
     ],
@@ -89,9 +160,10 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
          */
         async jwt({ token, user }) {
             if (user) {
-                token.role = (user as Record<string, unknown>).role as string;
-                token.department = (user as Record<string, unknown>)
-                    .department as string;
+                (token as Record<string, unknown>).role = user.role;
+                (token as Record<string, unknown>).department = user.department;
+                (token as Record<string, unknown>).groupId = user.groupId;
+                (token as Record<string, unknown>).groupCode = user.groupCode;
             }
             return token;
         },
@@ -101,8 +173,15 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
          */
         async session({ session, token }) {
             if (session.user) {
-                session.user.role = token.role as string;
-                session.user.department = token.department as string;
+                session.user.role = (token as Record<string, unknown>).role as
+                    | string
+                    | undefined;
+                session.user.department = (token as Record<string, unknown>)
+                    .department as string | undefined;
+                session.user.groupId = (token as Record<string, unknown>)
+                    .groupId as number | undefined;
+                session.user.groupCode = (token as Record<string, unknown>)
+                    .groupCode as string | undefined;
             }
             return session;
         },

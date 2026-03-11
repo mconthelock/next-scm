@@ -4,7 +4,8 @@
     "private": true,
     "scripts": {
         "server": "json-server --watch db.json --port 3002",
-        "dev": "next dev && npm run server",
+        "dev": "next dev",
+        "dev:all": "concurrently \"npm run server\" \"npm run dev\"",
         "build": "next build",
         "start": "next start",
         "lint": "eslint",
@@ -27,6 +28,7 @@
         "@types/node": "^20",
         "@types/react": "^19",
         "@types/react-dom": "^19",
+        "concurrently": "^9.2.1",
         "eslint": "^9",
         "eslint-config-next": "16.1.6",
         "json-server": "^1.0.0-beta.12",

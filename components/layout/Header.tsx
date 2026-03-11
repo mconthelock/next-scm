@@ -1,91 +1,21 @@
 'use client';
 import Image from 'next/image';
-import {
-    Menu,
-    X,
-    User,
-    ChevronDown,
-    Settings,
-    ChevronLeft,
-    LogOut,
-} from 'lucide-react';
+import Link from 'next/link';
+import { Menu, X, User, Settings, LogOut } from 'lucide-react';
 import React, { useState, useEffect } from 'react';
 import { useSession, signOut } from 'next-auth/react';
 import Logo from '../../public/logo.svg';
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-
-/** รายการเมนู */
-interface NavSubItem {
-    /** ชื่อเมนูย่อยที่จะแสดงใน submenu */
-    title: string;
-    href: string;
-    /** true = ต้อง login ถึงจะเห็น, false = เห็นตอนยังไม่ login, undefined = เห็นทุกสถานะ */
-    requireAuth?: boolean;
-}
-
-interface NavItem {
-    title: string;
-    href?: string;
-    /** children ใช้กรณีเมนูนี้เป็น parent และมีเมนูย่อยด้านใน */
-    children?: NavSubItem[];
-    /** true = ต้อง login ถึงจะเห็น, false = เห็นตอนยังไม่ login, undefined = เห็นทุกสถานะ */
-    requireAuth?: boolean;
-}
-
-/**
- * เมนูทั้งหมด — ใช้ requireAuth แบ่งว่าเห็นตอนไหน
- * - requireAuth: true  → เห็นเฉพาะตอน login แล้ว
- * - requireAuth: false → เห็นเฉพาะตอนยังไม่ login
- * - ไม่ใส่ (undefined)  → เห็นทุกสถานะ
- */
-const allNavItems: NavItem[] = [
-    { title: 'Home', href: '/', requireAuth: true },
-    {
-        title: 'Purchase Orders',
-        href: '/orders',
-        requireAuth: true,
-        children: [
-            { title: 'Users', href: '/users', requireAuth: true },
-            { title: 'Settings', href: '/settings', requireAuth: true },
-            { title: 'Profile', href: '/profile', requireAuth: true },
-        ],
-    },
-    {
-        title: 'Claim slip',
-        href: '/logistics',
-        requireAuth: true,
-        children: [
-            { title: 'Users', href: '/users', requireAuth: true },
-            { title: 'Settings', href: '/settings', requireAuth: true },
-            { title: 'Profile', href: '/profile', requireAuth: true },
-        ],
-    },
-    {
-        title: 'Drawing',
-        href: '/analytics',
-        requireAuth: true,
-    },
-    {
-        title: 'Other',
-        requireAuth: true,
-        children: [
-            { title: 'Changing Notice', href: '/users', requireAuth: true },
-            { title: 'Kaizen 4M Change', href: '/settings', requireAuth: true },
-        ],
-    },
-    // ตัวอย่างเมนูที่เห็นตอนยังไม่ login
-    { title: 'Home', href: '/', requireAuth: false },
-    { title: 'About', href: '/about', requireAuth: false },
-];
+import type { MenuItem } from '@/lib/menu';
+import { useUserMenu } from '@/lib/use-user-menu';
+import { DesktopNav } from '@/components/layout/header/DesktopNav';
+import { MobileNavDrawer } from '@/components/layout/header/MobileNavDrawer';
 
 /** กรองเมนูตามสถานะ login */
-function getVisibleNavItems(isLoggedIn: boolean): NavItem[] {
-    return allNavItems
+function getVisibleNavItems(
+    navItems: MenuItem[],
+    isLoggedIn: boolean,
+): MenuItem[] {
+    return navItems
         .map((item) => ({
             ...item,
             children: item.children?.filter(
@@ -109,7 +39,7 @@ function getVisibleNavItems(isLoggedIn: boolean): NavItem[] {
 
 export function Header() {
     // ดึง session จาก NextAuth — ได้ข้อมูล user + สถานะ login
-    const { data: session } = useSession();
+    const { data: session, status } = useSession();
     const [showUserMenu, setShowUserMenu] = useState(false);
 
     const [isOpen, setIsOpen] = useState(false);
@@ -120,7 +50,19 @@ export function Header() {
     const [lastScrollY, setLastScrollY] = useState(0);
 
     const isLoggedIn = !!session?.user;
-    const visibleNavItems = getVisibleNavItems(isLoggedIn);
+    const isSessionLoading = status === 'loading';
+    const userGroupId = session?.user?.groupId;
+    const { navItems, isMenuLoading, menuError, retryLoadMenu } = useUserMenu(
+        isLoggedIn,
+        isSessionLoading,
+        userGroupId,
+    );
+    const visibleNavItems = getVisibleNavItems(navItems, isLoggedIn);
+    const showEmptyMenu =
+        isLoggedIn &&
+        !isMenuLoading &&
+        !menuError &&
+        visibleNavItems.length === 0;
 
     // ข้อมูล user จาก session (มี role, department จาก JWT callback)
     const user = session?.user
@@ -174,54 +116,14 @@ export function Header() {
                 </div>
 
                 {/* Desktop Nav — แสดงเฉพาะเมนูที่ตรงตามสถานะ login */}
-                <nav className="hidden lg:flex items-center justify-center flex-1 px-8">
-                    <ul className="flex items-center gap-8">
-                        {visibleNavItems.map((item) => {
-                            if (item.children?.length) {
-                                return (
-                                    <li key={item.title}>
-                                        <DropdownMenu modal={false}>
-                                            <DropdownMenuTrigger asChild>
-                                                <button className="text-[13px] font-bold uppercase tracking-wide text-slate-700 hover:text-brand transition-colors relative group py-2 inline-flex items-center gap-1">
-                                                    {item.title}
-                                                    <ChevronDown className="h-3.5 w-3.5" />
-                                                    <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-brand transition-all group-hover:w-full" />
-                                                </button>
-                                            </DropdownMenuTrigger>
-                                            <DropdownMenuContent
-                                                align="start"
-                                                className="z-70"
-                                            >
-                                                {item.children.map((child) => (
-                                                    <DropdownMenuItem
-                                                        asChild
-                                                        key={child.title}
-                                                    >
-                                                        <a href={child.href}>
-                                                            {child.title}
-                                                        </a>
-                                                    </DropdownMenuItem>
-                                                ))}
-                                            </DropdownMenuContent>
-                                        </DropdownMenu>
-                                    </li>
-                                );
-                            }
-
-                            return (
-                                <li key={item.title}>
-                                    <a
-                                        href={item.href}
-                                        className="text-[13px] font-bold uppercase tracking-wide text-slate-700 hover:text-brand transition-colors relative group py-2"
-                                    >
-                                        {item.title}
-                                        <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-brand transition-all group-hover:w-full" />
-                                    </a>
-                                </li>
-                            );
-                        })}
-                    </ul>
-                </nav>
+                <DesktopNav
+                    items={visibleNavItems}
+                    isMenuLoading={isMenuLoading}
+                    isLoggedIn={isLoggedIn}
+                    menuError={menuError}
+                    showEmptyMenu={showEmptyMenu}
+                    onRetry={retryLoadMenu}
+                />
 
                 {/* Tools Section — เปลี่ยนตามสถานะ login */}
                 <div className="flex items-center gap-1 shrink-0">
@@ -258,20 +160,20 @@ export function Header() {
                                                 {user.role} · {user.department}
                                             </p>
                                         </div>
-                                        <a
+                                        <Link
                                             href="/profile"
                                             className="flex items-center gap-2 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50"
                                         >
                                             <User className="h-4 w-4" />
                                             Profile
-                                        </a>
-                                        <a
+                                        </Link>
+                                        <Link
                                             href="/settings"
                                             className="flex items-center gap-2 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50"
                                         >
                                             <Settings className="h-4 w-4" />
                                             Settings
-                                        </a>
+                                        </Link>
                                         <div className="border-t border-slate-100 mt-1 pt-1">
                                             <button
                                                 className="flex items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-red-50 w-full"
@@ -292,13 +194,13 @@ export function Header() {
                         </div>
                     ) : (
                         /* --- ยังไม่ login: แสดงปุ่ม Login --- */
-                        <a
+                        <Link
                             href="/login"
                             className="flex items-center gap-2 px-3 py-2 hover:bg-slate-50 rounded-md text-slate-600 font-bold text-sm"
                         >
                             <User className="h-5 w-5" />
                             <span className="hidden sm:block">Login</span>
-                        </a>
+                        </Link>
                     )}
 
                     {/* Toggle Menu/X Icon: เปลี่ยนไอคอนตามสถานะ isOpen */}
@@ -315,154 +217,23 @@ export function Header() {
                 </div>
             </div>
 
-            {/* --- MOBILE RIGHT SIDE DRAWER (STAYS BELOW NAVBAR) --- */}
-            {/* 1. Backdrop: เริ่มที่ top-[80px] */}
-            <div
-                className={`fixed inset-0 bg-black/40 backdrop-blur-sm transition-opacity duration-300 lg:hidden ${
-                    isOpen
-                        ? 'opacity-100 pointer-events-auto'
-                        : 'opacity-0 pointer-events-none'
-                }`}
-                style={{ zIndex: 40, top: '80px' }}
-                onClick={() => setIsOpen(false)}
+            <MobileNavDrawer
+                items={visibleNavItems}
+                isMenuLoading={isMenuLoading}
+                isLoggedIn={isLoggedIn}
+                menuError={menuError}
+                showEmptyMenu={showEmptyMenu}
+                onRetry={retryLoadMenu}
+                isOpen={isOpen}
+                expandedMobileMenu={expandedMobileMenu}
+                setExpandedMobileMenu={setExpandedMobileMenu}
+                onClose={() => setIsOpen(false)}
+                user={user}
+                onLogout={() => {
+                    setIsOpen(false);
+                    signOut({ callbackUrl: '/login' });
+                }}
             />
-
-            {/* 2. Side Drawer: เริ่มที่ top-[80px] และสูงที่เหลือของจอ */}
-            <div
-                className={`fixed right-0 h-[calc(100vh-80px)] w-full sm:w-[320px] bg-white shadow-2xl transform transition-transform duration-500 ease-out lg:hidden ${
-                    isOpen ? 'translate-x-0' : 'translate-x-full'
-                }`}
-                style={{ zIndex: 50, top: '80px' }}
-            >
-                <div className="h-1 w-full bg-brand" />
-                <div className="flex flex-col h-full">
-                    <nav className="flex-1 overflow-y-auto py-4">
-                        <ul className="flex flex-col">
-                            {visibleNavItems.map((item) => {
-                                if (item.children?.length) {
-                                    const isExpanded =
-                                        expandedMobileMenu === item.title;
-
-                                    return (
-                                        <li key={item.title}>
-                                            <button
-                                                className="w-full flex items-center justify-between px-8 py-4 text-sm font-medium text-slate-700 hover:bg-slate-50 hover:text-brand transition-colors"
-                                                onClick={() =>
-                                                    setExpandedMobileMenu(
-                                                        isExpanded
-                                                            ? null
-                                                            : item.title,
-                                                    )
-                                                }
-                                            >
-                                                <div className="flex items-center gap-3">
-                                                    <ChevronLeft className="h-4 w-4 opacity-20" />
-                                                    {item.title}
-                                                </div>
-                                                <ChevronDown
-                                                    className={`h-4 w-4 transition-transform ${
-                                                        isExpanded
-                                                            ? 'rotate-180'
-                                                            : ''
-                                                    }`}
-                                                />
-                                            </button>
-
-                                            {isExpanded && (
-                                                <ul className="bg-slate-50 border-y border-slate-100">
-                                                    {item.children.map(
-                                                        (child) => (
-                                                            <li
-                                                                key={
-                                                                    child.title
-                                                                }
-                                                            >
-                                                                <a
-                                                                    href={
-                                                                        child.href
-                                                                    }
-                                                                    className="flex items-center gap-3 pl-14 pr-8 py-3 text-sm text-slate-600 hover:text-brand hover:bg-slate-100 transition-colors"
-                                                                    onClick={() => {
-                                                                        setIsOpen(
-                                                                            false,
-                                                                        );
-                                                                        setExpandedMobileMenu(
-                                                                            null,
-                                                                        );
-                                                                    }}
-                                                                >
-                                                                    {
-                                                                        child.title
-                                                                    }
-                                                                </a>
-                                                            </li>
-                                                        ),
-                                                    )}
-                                                </ul>
-                                            )}
-                                        </li>
-                                    );
-                                }
-
-                                return (
-                                    <li key={item.title}>
-                                        <a
-                                            href={item.href}
-                                            className="flex items-center justify-between px-8 py-4 text-sm font-medium text-slate-700 hover:bg-slate-50 hover:text-brand transition-colors"
-                                            onClick={() => setIsOpen(false)}
-                                        >
-                                            <div className="flex items-center gap-3">
-                                                <ChevronLeft className="h-4 w-4 opacity-20" />
-                                                {item.title}
-                                            </div>
-                                        </a>
-                                    </li>
-                                );
-                            })}
-                        </ul>
-                    </nav>
-
-                    <div className="p-6 border-t bg-slate-50">
-                        {user ? (
-                            <>
-                                <div className="flex items-center gap-3 mb-4">
-                                    <div className="h-10 w-10 rounded-full bg-brand flex items-center justify-center text-white text-sm font-bold">
-                                        {user.name.charAt(0)}
-                                    </div>
-                                    <div>
-                                        <p className="text-sm font-bold text-slate-800">
-                                            {user.name}
-                                        </p>
-                                        <p className="text-xs text-slate-500">
-                                            {user.role}
-                                        </p>
-                                    </div>
-                                </div>
-                                <button
-                                    className="w-full flex items-center justify-center gap-2 py-3 bg-red-600 text-white rounded font-bold text-sm"
-                                    onClick={() => {
-                                        setIsOpen(false);
-                                        signOut({ callbackUrl: '/login' });
-                                    }}
-                                >
-                                    <LogOut className="h-4 w-4" /> Logout
-                                </button>
-                            </>
-                        ) : (
-                            <a
-                                href="/login"
-                                className="w-full flex items-center justify-center gap-2 py-3 bg-[#333] text-white rounded font-bold text-sm"
-                                onClick={() => setIsOpen(false)}
-                            >
-                                <User className="h-4 w-4" /> Account Login
-                            </a>
-                        )}
-                        <p className="text-[10px] text-center text-slate-400 mt-4 uppercase tracking-widest font-bold">
-                            Changes for the Better
-                        </p>
-                    </div>
-                </div>
-            </div>
         </header>
     );
 }
