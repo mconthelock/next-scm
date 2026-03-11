@@ -165,7 +165,7 @@ export default function LoginPage() {
             >
                 <div className="absolute inset-0 bg-black opacity-50"></div>
             </div>
-            <div className="relative flex items-center justify-center h-full mt-24 mb-5">
+            <div className="relative flex items-center justify-center min-h-[calc(100vh-6rem)] mt-24 mb-5">
                 <div className="text-center p-4">
                     <div className="min-w-md flex items-center justify-center bg-slate-50 shadow-lg px-8 py-12">
                         <div className="w-full max-w-md">

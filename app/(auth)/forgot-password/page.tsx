@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
-import React, { Suspense } from 'react';
+import React, { Suspense, useState } from 'react';
 import { Field, FieldGroup, FieldLabel, FieldSet } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -12,10 +12,16 @@ function ForgotPasswordForm() {
     const callbackUrl = searchParams.get('callbackUrl') || '/';
     const username = searchParams.get('username') || '';
     const reason = searchParams.get('reason');
+    const messageParam = searchParams.get('message');
     const backToLoginHref = `/login?callbackUrl=${encodeURIComponent(callbackUrl)}`;
 
+    const [successMessage, setSuccessMessage] = useState('');
+    async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+        event.preventDefault();
+        setSuccessMessage('xxxx');
+    }
     return (
-        <form className="space-y-6">
+        <form className="space-y-6" onSubmit={handleSubmit}>
             <FieldSet className="w-full max-w-sm">
                 <FieldGroup>
                     <Field>
@@ -40,6 +46,12 @@ function ForgotPasswordForm() {
 
                     <Button type="submit">ส่งลิงก์รีเซ็ตรหัสผ่าน</Button>
 
+                    {successMessage ? (
+                        <div className="bg-emerald-50 border border-emerald-200 text-emerald-700 text-sm px-4 py-3 rounded-lg">
+                            {successMessage}
+                        </div>
+                    ) : null}
+
                     <Link
                         href={backToLoginHref}
                         className="text-sm text-blue-500 hover:underline"
@@ -54,15 +66,17 @@ function ForgotPasswordForm() {
 
 export default function ForgotPasswordPage() {
     return (
-        <div
-            className="relative h-screen bg-cover bg-center"
-            style={{
-                backgroundImage: "url('/bg_pagetitle_01_lg.jpg')",
-            }}
-        >
-            <div className="absolute inset-0 bg-black opacity-50"></div>
-            <div className="relative flex items-center justify-center h-full">
-                <div className="w-full max-w-md rounded-2xl bg-white p-8 shadow-lg border border-slate-200">
+        <div className="relative min-h-screen">
+            <div
+                className="fixed z-[-1] top-0 min-h-screen w-screen bg-cover bg-center"
+                style={{
+                    backgroundImage: "url('/bg_pagetitle_01_lg.jpg')",
+                }}
+            >
+                <div className="absolute inset-0 bg-black opacity-50"></div>
+            </div>
+            <div className="relative flex items-center justify-center min-h-[calc(100vh-6rem)] mt-24 mb-5">
+                <div className="w-full max-w-md bg-white p-8 shadow-lg border border-slate-200">
                     <div className="mb-8 text-center">
                         <h1 className="text-xl font-bold text-slate-800">
                             Forgot Password

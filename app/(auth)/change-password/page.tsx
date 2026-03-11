@@ -26,11 +26,9 @@ function ChangePasswordForm() {
     const searchParams = useSearchParams();
     const callbackUrl = searchParams.get('callbackUrl') || '/';
     const token = searchParams.get('token') || '';
-    const reason = searchParams.get('reason');
     const backToLoginHref = `/login?callbackUrl=${encodeURIComponent(callbackUrl)}`;
 
     const [username, setUsername] = useState('');
-    const [displayName, setDisplayName] = useState('');
     const [newPassword, setNewPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
     const [isCheckingTicket, setIsCheckingTicket] = useState(true);
@@ -40,7 +38,6 @@ function ChangePasswordForm() {
 
     useEffect(() => {
         let isCancelled = false;
-
         async function validateTicket() {
             if (!token) {
                 setError('ลิงก์เปลี่ยนรหัสผ่านไม่ถูกต้องหรือหมดอายุ');
@@ -64,7 +61,6 @@ function ChangePasswordForm() {
 
                 if (!isCancelled) {
                     setUsername(data.username);
-                    setDisplayName(data.displayName ?? '');
                     setError('');
                 }
             } catch (ticketError) {
@@ -250,8 +246,8 @@ export default function ChangePasswordPage() {
             >
                 <div className="absolute inset-0 bg-black opacity-50"></div>
             </div>
-            <div className="relative flex items-center justify-center h-full mt-24 mb-5">
-                <div className="w-full max-w-md rounded-2xl bg-white p-8 shadow-lg border border-slate-200">
+            <div className="relative flex items-center justify-center min-h-[calc(100vh-6rem)] mt-24 mb-5">
+                <div className="w-full max-w-md bg-white p-8 shadow-lg border border-slate-200">
                     <div className="mb-8 text-center">
                         <h1 className="text-xl font-bold text-slate-800">
                             Change Password
