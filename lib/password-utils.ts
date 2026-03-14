@@ -32,16 +32,9 @@ export function hashPassword(password: string) {
 }
 
 export function isPasswordResetRequired(resetDate?: string) {
-    if (!resetDate) {
-        return false;
-    }
-
+    if (!resetDate) return false;
     const parsedResetDate = new Date(resetDate);
-
-    if (Number.isNaN(parsedResetDate.getTime())) {
-        return false;
-    }
-
+    if (Number.isNaN(parsedResetDate.getTime())) return false;
     return parsedResetDate.getTime() <= Date.now();
 }
 

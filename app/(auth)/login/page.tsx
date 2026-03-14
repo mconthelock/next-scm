@@ -4,7 +4,9 @@ import { signIn } from 'next-auth/react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import React, { useState, Suspense } from 'react';
+import { AuthPageShell } from '@/components/auth/AuthPageShell';
 import { Field, FieldGroup, FieldLabel, FieldSet } from '@/components/ui/field';
+
 import { Input } from '@/components/ui/input';
 import { PasswordInput } from '@/components/ui/password-input';
 import { Button } from '@/components/ui/button';
@@ -103,7 +105,7 @@ function LoginForm() {
 
     return (
         <form onSubmit={handleSubmit}>
-            <FieldSet className="w-full max-w-xs">
+            <FieldSet className="w-full">
                 <FieldGroup>
                     <Field {...(error ? { 'data-invalid': true } : {})}>
                         <FieldLabel htmlFor="username">Username</FieldLabel>
@@ -157,40 +159,29 @@ function LoginForm() {
 export default function LoginPage() {
     return (
         <div className="relative min-h-screen">
-            <div
-                className="fixed z-[-1] top-0 min-h-screen w-screen bg-cover bg-center"
-                style={{
-                    backgroundImage: "url('/bg_pagetitle_01_lg.jpg')",
-                }}
-            >
-                <div className="absolute inset-0 bg-black opacity-50"></div>
-            </div>
-            <div className="relative flex items-center justify-center min-h-[calc(100vh-6rem)] mt-24 mb-5">
-                <div className="text-center p-4">
-                    <div className="min-w-md flex items-center justify-center bg-slate-50 shadow-lg px-8 py-12">
-                        <div className="w-full max-w-md">
-                            {/* Login header */}
-                            <div className="text-center mb-8">
-                                <h1 className="text-xl font-bold text-slate-800">
-                                    Supply Chain Management
-                                </h1>
-                                <p className="text-sm text-slate-500 mt-1">
-                                    เข้าสู่ระบบเพื่อดำเนินการต่อ
-                                </p>
-                            </div>
+            <AuthPageShell />
+            <div className="relative flex items-center justify-center min-h-[calc(100vh-6rem)] mt-24 mb-5 px-5">
+                <div className="w-full max-w-md py-8 bg-white shadow-lg border border-slate-200">
+                    <div className="w-full max-w-md">
+                        <div className="text-center mb-8">
+                            <h1 className="text-xl font-bold text-slate-800">
+                                Supply Chain Management
+                            </h1>
+                            <p className="text-sm text-slate-500 mt-1">
+                                เข้าสู่ระบบเพื่อดำเนินการต่อ
+                            </p>
+                        </div>
 
-                            {/* Login Card */}
-                            <div className="w-full p-8">
-                                <Suspense
-                                    fallback={
-                                        <div className="text-center text-sm text-slate-400">
-                                            Loading...
-                                        </div>
-                                    }
-                                >
-                                    <LoginForm />
-                                </Suspense>
-                            </div>
+                        <div className="w-full p-8">
+                            <Suspense
+                                fallback={
+                                    <div className="text-center text-sm text-slate-400">
+                                        Loading...
+                                    </div>
+                                }
+                            >
+                                <LoginForm />
+                            </Suspense>
                         </div>
                     </div>
                 </div>

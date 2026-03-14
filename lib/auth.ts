@@ -6,17 +6,17 @@ import { hashPassword, isPasswordResetRequired } from '@/lib/password-utils';
 declare module 'next-auth' {
     interface User {
         role?: string;
-        department?: string;
         groupId?: number;
         groupCode?: string;
+        vendoder?: number;
     }
 
     interface Session {
         user: {
             role?: string;
-            department?: string;
             groupId?: number;
             groupCode?: string;
+            vendoder?: number;
         } & DefaultSession['user'];
     }
 }
@@ -31,6 +31,7 @@ interface ApiUser {
     USR_POSITION: string;
     USER_STATUS: number;
     USR_RESETDATE?: string;
+    VENDOR: number;
     GROUPS?: Array<{
         GRP_ID: number;
         GRP_CODE: string;
@@ -42,11 +43,9 @@ class PasswordResetRequiredError extends CredentialsSignin {
     code = 'password-reset-required';
 }
 
-const API_BASE_URL = process.env.API_BASE_URL ?? 'http://127.0.0.1:3002';
-
 async function getUserByUsername(username: string) {
     const response = await fetch(
-        `${API_BASE_URL}/users?USR_LOGIN=${encodeURIComponent(username)}`,
+        `${process.env.NEXT_PUBLIC_API}/users?USR_LOGIN=${encodeURIComponent(username)}`,
         {
             cache: 'no-store',
         },
@@ -69,29 +68,18 @@ function mapUserToSessionUser(user: ApiUser) {
         department: user.USR_POSITION,
         groupId: user.GROUPS?.[0]?.GRP_ID,
         groupCode: user.GROUPS?.[0]?.GRP_CODE ?? '',
+        vendoder: user.VENDOR,
     };
 }
 
-/**
- * NextAuth configuration
- *
- * ใช้ Credentials provider (username + password) — คล้ายกับ Passport Local Strategy
- */
 export const { handlers, signIn, signOut, auth } = NextAuth({
-    // ต้องมี secret สำหรับเข้ารหัส JWT/session และ token ภายในของ Auth.js
     secret: process.env.AUTH_SECRET,
-
     providers: [
         Credentials({
-            // ฟิลด์ที่จะแสดงในฟอร์ม (ใช้เฉพาะ built-in page ถ้าไม่ได้สร้าง custom)
             credentials: {
                 username: { label: 'Username', type: 'text' },
                 password: { label: 'Password', type: 'password' },
             },
-
-            /**
-             * authorize — ตรวจสอบ username/password
-             */
             async authorize(credentials) {
                 const { username, password } = credentials as {
                     username: string;
@@ -104,7 +92,6 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
 
                 try {
                     const user = await getUserByUsername(username);
-
                     if (!user || user.USER_STATUS !== 1) {
                         return null;
                     }
@@ -113,11 +100,10 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
                         return null;
                     }
 
-                    if (isPasswordResetRequired(user.USR_RESETDATE)) {
-                        throw new PasswordResetRequiredError();
-                    }
+                    // if (isPasswordResetRequired(user.USR_RESETDATE)) {
+                    //     throw new PasswordResetRequiredError();
+                    // }
 
-                    // ส่งกลับ user object (จะถูกเก็บใน JWT token)
                     return mapUserToSessionUser(user);
                 } catch (error) {
                     if (error instanceof PasswordResetRequiredError) {
@@ -130,47 +116,31 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             },
         }),
     ],
-
-    // กำหนดหน้า login เอง (ไม่ใช้ built-in)
-    pages: {
-        signIn: '/login',
-    },
-
+    pages: { signIn: '/login' },
+    session: { strategy: 'jwt' },
     callbacks: {
-        /**
-         * jwt callback — เพิ่ม role และ department เข้าไปใน token
-         */
         async jwt({ token, user }) {
             if (user) {
                 (token as Record<string, unknown>).role = user.role;
-                (token as Record<string, unknown>).department = user.department;
                 (token as Record<string, unknown>).groupId = user.groupId;
                 (token as Record<string, unknown>).groupCode = user.groupCode;
+                (token as Record<string, unknown>).vendoder = user.vendoder;
             }
             return token;
         },
-
-        /**
-         * session callback — ส่ง role และ department ไปยัง client session
-         */
         async session({ session, token }) {
             if (session.user) {
                 session.user.role = (token as Record<string, unknown>).role as
                     | string
                     | undefined;
-                session.user.department = (token as Record<string, unknown>)
-                    .department as string | undefined;
                 session.user.groupId = (token as Record<string, unknown>)
                     .groupId as number | undefined;
                 session.user.groupCode = (token as Record<string, unknown>)
                     .groupCode as string | undefined;
+                session.user.vendoder = (token as Record<string, unknown>)
+                    .vendoder as number | undefined;
             }
             return session;
         },
-    },
-
-    // ใช้ JWT strategy (ไม่ต้องมี database)
-    session: {
-        strategy: 'jwt',
     },
 });

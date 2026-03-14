@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import React, { Suspense, useState } from 'react';
+import { AuthPageShell } from '@/components/auth/AuthPageShell';
 import { Field, FieldGroup, FieldLabel, FieldSet } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -67,35 +68,31 @@ function ForgotPasswordForm() {
 export default function ForgotPasswordPage() {
     return (
         <div className="relative min-h-screen">
-            <div
-                className="fixed z-[-1] top-0 min-h-screen w-screen bg-cover bg-center"
-                style={{
-                    backgroundImage: "url('/bg_pagetitle_01_lg.jpg')",
-                }}
-            >
-                <div className="absolute inset-0 bg-black opacity-50"></div>
-            </div>
-            <div className="relative flex items-center justify-center min-h-[calc(100vh-6rem)] mt-24 mb-5">
-                <div className="w-full max-w-md bg-white p-8 shadow-lg border border-slate-200">
-                    <div className="mb-8 text-center">
-                        <h1 className="text-xl font-bold text-slate-800">
-                            Forgot Password
-                        </h1>
-                        <p className="mt-2 text-sm text-slate-500">
-                            กรอก username หรือ email
-                            เพื่อรับลิงก์สำหรับรีเซ็ตรหัสผ่าน
-                        </p>
+            <AuthPageShell />
+            <div className="relative flex items-center justify-center min-h-[calc(100vh-6rem)] mt-24 mb-5 px-5">
+                <div className="w-full max-w-md py-8 bg-white shadow-lg border border-slate-200">
+                    <div className="w-full max-w-md">
+                        <div className="mb-8 text-center">
+                            <h1 className="text-xl font-bold text-slate-800">
+                                Forgot Password
+                            </h1>
+                            <p className="mt-2 text-sm text-slate-500">
+                                กรอก username หรือ email
+                                เพื่อรับลิงก์สำหรับรีเซ็ตรหัสผ่าน
+                            </p>
+                        </div>
+                        <div className="w-full p-8">
+                            <Suspense
+                                fallback={
+                                    <div className="text-center text-sm text-slate-400">
+                                        Loading...
+                                    </div>
+                                }
+                            >
+                                <ForgotPasswordForm />
+                            </Suspense>
+                        </div>
                     </div>
-
-                    <Suspense
-                        fallback={
-                            <div className="text-center text-sm text-slate-400">
-                                Loading...
-                            </div>
-                        }
-                    >
-                        <ForgotPasswordForm />
-                    </Suspense>
                 </div>
             </div>
         </div>

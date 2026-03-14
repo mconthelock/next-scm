@@ -1,5 +1,6 @@
 const MENU_DEFINITIONS = [
     {
+        id: 1,
         USER_GROUP: 1,
         MENU: [
             { title: 'Home', href: '/', requireAuth: true },
@@ -47,6 +48,7 @@ const MENU_DEFINITIONS = [
         ],
     },
     {
+        id: 2,
         USER_GROUP: 2,
         MENU: [
             { title: 'Home', href: '/', requireAuth: true },
@@ -94,6 +96,7 @@ const MENU_DEFINITIONS = [
         ],
     },
     {
+        id: 3,
         USER_GROUP: 3,
         MENU: [
             { title: 'Home', href: '/', requireAuth: true },

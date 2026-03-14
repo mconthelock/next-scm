@@ -20,6 +20,7 @@ const createUser = (id, groups = []) => ({
     USER_STATUS: 1,
     USR_RESETDATE: faker.date.past().toISOString(),
     GROUPS: groups,
+    VENDORS: 0,
     USR_CREATED: faker.date.past().toISOString(),
 });
 
