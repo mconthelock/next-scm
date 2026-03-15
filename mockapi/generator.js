@@ -9,6 +9,7 @@ const { createStatus, STATUS_DEFINITIONS } = require('./schemas/status');
 const createUser = require('./schemas/users');
 const createVendor = require('./schemas/vendors');
 const createVendorCode = require('./schemas/vendors_code');
+const createUserLog = require('./schemas/users_logs');
 
 function getRandom(min, max) {
     min = Math.ceil(min);
@@ -23,6 +24,7 @@ const generateDB = () => {
         users_group: [],
         vendors: [],
         authen: [],
+        logs: [],
     };
     // สร้าง status
     db.status = STATUS_DEFINITIONS.map(createStatus);
@@ -63,6 +65,13 @@ const generateDB = () => {
         let users = createUser(i, randomStatus, randomGroup, vndData);
         db.users.push(users);
     }
+
+    for (let i = 1; i <= 5000; i++) {
+        const randomUser = db.users[getRandom(0, db.users.length)].USR_LOGIN;
+        const userLog = createUserLog(i, randomUser);
+        db.logs.push(userLog);
+    }
+
     db.authen = createMenuUser(MENU_DEFINITIONS);
     return db;
 };

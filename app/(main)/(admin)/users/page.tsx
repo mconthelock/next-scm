@@ -10,7 +10,7 @@ import { useLocale } from '@/components/providers/LocaleProvider';
 
 function PageForm() {
     const { data, isLoading, loadError, retryLoadUsers } = useUsers();
-    const { locale } = useLocale();
+    const { locale, messages } = useLocale();
     const groupOptions = useMemo(
         () =>
             Array.from(
@@ -26,6 +26,24 @@ function PageForm() {
                 .map((groupName) => ({
                     label: groupName,
                     value: groupName,
+                })),
+        [data, locale],
+    );
+    const statusOptions = useMemo(
+        () =>
+            Array.from(
+                new Set(
+                    data
+                        .map((user) => user.USER_STATUS.STATUS_DESC)
+                        .filter((statusName): statusName is string =>
+                            Boolean(statusName),
+                        ),
+                ),
+            )
+                .sort((left, right) => left.localeCompare(right, locale))
+                .map((statusName) => ({
+                    label: statusName,
+                    value: statusName,
                 })),
         [data, locale],
     );
@@ -60,9 +78,15 @@ function PageForm() {
                 selectFilters={[
                     {
                         columnId: 'GROUPS',
-                        placeholder:
-                            locale === 'th' ? 'ทุกกลุ่มผู้ใช้' : 'All groups',
+                        placeholder: messages.table.filterLabels.allGroups,
                         options: groupOptions,
+                    },
+                ]}
+                buttonFilters={[
+                    {
+                        columnId: 'USER_STATUS',
+                        allLabel: messages.table.filterLabels.allStatus,
+                        options: statusOptions,
                     },
                 ]}
                 pageSize={20}

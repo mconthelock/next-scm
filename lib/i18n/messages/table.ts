@@ -1,60 +1,24 @@
 import type { Locale } from '@/lib/i18n/config';
 import type { TableMessages } from '@/lib/i18n/types';
 
+import { tableCommon } from '@/lib/i18n/messages/table-common';
+import { logsTable } from '@/lib/i18n/messages/table-logs';
+import { userTable } from '@/lib/i18n/messages/table-users';
+
 /** ข้อความของตารางสำหรับแต่ละภาษา */
 export const tableMessages: Record<Locale, TableMessages> = {
     th: {
-        noResults: 'ไม่พบข้อมูล',
-        previous: 'ก่อนหน้า',
-        next: 'ถัดไป',
-        showMore: 'แสดงเพิ่มเติม',
-        showLess: 'ซ่อนรายละเอียด',
-        pageStatus: 'หน้า {current} จาก {total}',
-        morePages: 'มีหน้าเพิ่มเติม',
-        filterPlaceholder: 'ค้นหาข้อมูล...',
-        sortColumnLabel: 'เรียงตาม',
-        sortDirectionAsc: 'น้อยไปมาก',
-        sortDirectionDesc: 'มากไปน้อย',
+        ...tableCommon.th,
         columnLabels: {
-            'users.login': 'ชื่อเข้าใช้',
-            'users.name': 'ชื่อ',
-            'users.status': 'สถานะ',
-            'users.email': 'อีเมล',
-            'users.groups': 'กลุ่มผู้ใช้',
-            'users.vendor': 'ผู้ขาย',
-            Login: 'ชื่อเข้าใช้',
-            Name: 'ชื่อ',
-            Status: 'สถานะ',
-            Email: 'อีเมล',
-            Groups: 'กลุ่มผู้ใช้',
-            Vendors: 'ผู้ขาย',
+            ...logsTable.th,
+            ...userTable.th,
         },
     },
     en: {
-        noResults: 'No results.',
-        previous: 'Previous',
-        next: 'Next',
-        showMore: 'Show more',
-        showLess: 'Show less',
-        pageStatus: 'Page {current} of {total}',
-        morePages: 'More pages',
-        filterPlaceholder: 'Search records...',
-        sortColumnLabel: 'Sort by',
-        sortDirectionAsc: 'Ascending',
-        sortDirectionDesc: 'Descending',
+        ...tableCommon.en,
         columnLabels: {
-            'users.login': 'Login',
-            'users.name': 'Name',
-            'users.status': 'Status',
-            'users.email': 'Email',
-            'users.groups': 'Groups',
-            'users.vendor': 'Vendor',
-            Login: 'Login',
-            Name: 'Name',
-            Status: 'Status',
-            Email: 'Email',
-            Groups: 'Groups',
-            Vendors: 'Vendor',
+            ...logsTable.en,
+            ...userTable.en,
         },
     },
 };

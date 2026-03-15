@@ -84,6 +84,8 @@ export interface TableMessages {
     pageStatus: string;
     morePages: string;
     filterPlaceholder: string;
+    /** label ของ filter กลาง เช่น ทุกสถานะ / ทุกกลุ่ม */
+    filterLabels: Record<string, string>;
     sortColumnLabel: string;
     sortDirectionAsc: string;
     sortDirectionDesc: string;

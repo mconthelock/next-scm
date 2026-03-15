@@ -19,9 +19,9 @@ export function AuthPageShell({
                 <div className="absolute inset-0 bg-black opacity-50" />
             </div>
 
-            <div className="fixed right-4 top-4 z-30">
+            {/* <div className="fixed right-4 top-4 z-30">
                 <LocaleSwitcher />
-            </div>
+            </div> */}
         </>
     );
 }

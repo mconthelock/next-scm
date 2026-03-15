@@ -1,6 +1,7 @@
 'use client';
 
 import { type Cell, type ColumnDef } from '@tanstack/react-table';
+import type { DateRange } from 'react-day-picker';
 
 /** option ของ dropdown filter */
 export interface DataTableSelectFilterOption {
@@ -15,6 +16,28 @@ export interface DataTableSelectFilter {
     options: DataTableSelectFilterOption[];
 }
 
+/** config ของ button filter สำหรับคอลัมน์ที่มีค่าจำนวนน้อย */
+export interface DataTableButtonFilter {
+    columnId: string;
+    allLabel: string;
+    options: DataTableSelectFilterOption[];
+}
+
+/** config ของ date picker filter ที่ใช้เลือกวันเดียวเพื่อกรองข้อมูล */
+export interface DataTableDateFilter {
+    columnId: string;
+    placeholder: string;
+    clearLabel: string;
+}
+
+/** config ของ date range filter ที่ใช้กรองคอลัมน์วันที่แบบช่วงวัน */
+export interface DataTableDateRangeFilter {
+    columnId: string;
+    fromPlaceholder: string;
+    toPlaceholder: string;
+    clearLabel: string;
+}
+
 /** ข้อมูลที่ component filter bar ใช้ render select แต่ละตัว */
 export interface DataTableFilterSelectItem {
     columnId: string;
@@ -22,6 +45,34 @@ export interface DataTableFilterSelectItem {
     options: DataTableSelectFilterOption[];
     selectedValue: string;
     onValueChange: (nextValue: string) => void;
+}
+
+/** ข้อมูลที่ component filter bar ใช้ render button filter */
+export interface DataTableFilterButtonItem {
+    columnId: string;
+    allLabel: string;
+    options: DataTableSelectFilterOption[];
+    selectedValue: string;
+    onValueChange: (nextValue: string) => void;
+}
+
+/** ข้อมูลที่ component filter bar ใช้ render date picker filter */
+export interface DataTableFilterDateItem {
+    columnId: string;
+    placeholder: string;
+    clearLabel: string;
+    selectedDate: Date | undefined;
+    onDateChange: (nextDate?: Date) => void;
+}
+
+/** ข้อมูลที่ component filter bar ใช้ render date range filter */
+export interface DataTableFilterDateRangeItem {
+    columnId: string;
+    fromPlaceholder: string;
+    toPlaceholder: string;
+    clearLabel: string;
+    selectedRange: DateRange | undefined;
+    onRangeChange: (nextRange?: DateRange) => void;
 }
 
 /** props หลักของ DataTable ที่หน้าอื่นจะส่งเข้ามาใช้ซ้ำ */
@@ -34,6 +85,12 @@ export interface DataTableProps<TData, TValue> {
     pageSize?: number;
     /** รายการ select filter สำหรับกรองข้อมูลบางคอลัมน์แบบเลือกค่าเดียว */
     selectFilters?: DataTableSelectFilter[];
+    /** รายการ button filter สำหรับคอลัมน์ที่มีตัวเลือกไม่มาก */
+    buttonFilters?: DataTableButtonFilter[];
+    /** รายการ date picker filter สำหรับคอลัมน์วันที่ */
+    dateFilters?: DataTableDateFilter[];
+    /** รายการ date range filter สำหรับคอลัมน์วันที่แบบจากวันที่ถึงวันที่ */
+    dateRangeFilters?: DataTableDateRangeFilter[];
 }
 
 /** meta เพิ่มเติมของคอลัมน์ที่ DataTable ใช้จัดการ UX บน mobile และ i18n */
