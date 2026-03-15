@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import React, { Suspense, useEffect, useState } from 'react';
 import { AuthPageShell } from '@/components/auth/AuthPageShell';
+import { useLocale } from '@/components/providers/LocaleProvider';
 import { Field, FieldGroup, FieldLabel, FieldSet } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -24,6 +25,7 @@ interface ChangePasswordSubmitResponse {
 }
 
 function ChangePasswordForm() {
+    const { messages } = useLocale();
     const searchParams = useSearchParams();
     const callbackUrl = searchParams.get('callbackUrl') || '/';
     const token = searchParams.get('token') || '';
@@ -41,7 +43,7 @@ function ChangePasswordForm() {
         let isCancelled = false;
         async function validateTicket() {
             if (!token) {
-                setError('ลิงก์เปลี่ยนรหัสผ่านไม่ถูกต้องหรือหมดอายุ');
+                setError(messages.auth.changePassword.invalidTicket);
                 setIsCheckingTicket(false);
                 return;
             }
@@ -56,7 +58,7 @@ function ChangePasswordForm() {
                 if (!response.ok || !data.username) {
                     throw new Error(
                         data.message ??
-                            'ลิงก์เปลี่ยนรหัสผ่านไม่ถูกต้องหรือหมดอายุ',
+                            messages.auth.changePassword.invalidTicket,
                     );
                 }
 
@@ -69,7 +71,7 @@ function ChangePasswordForm() {
                     setError(
                         ticketError instanceof Error
                             ? ticketError.message
-                            : 'ลิงก์เปลี่ยนรหัสผ่านไม่ถูกต้องหรือหมดอายุ',
+                            : messages.auth.changePassword.invalidTicket,
                     );
                 }
             } finally {
@@ -84,7 +86,7 @@ function ChangePasswordForm() {
         return () => {
             isCancelled = true;
         };
-    }, [token]);
+    }, [messages.auth.changePassword.invalidTicket, token]);
 
     async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
         event.preventDefault();
@@ -109,7 +111,9 @@ function ChangePasswordForm() {
 
             if (!response.ok) {
                 setPolicyErrors(data.errors ?? []);
-                throw new Error(data.message ?? 'ไม่สามารถเปลี่ยนรหัสผ่านได้');
+                throw new Error(
+                    data.message ?? messages.auth.changePassword.unableToChange,
+                );
             }
 
             const loginHref = `/login?callbackUrl=${encodeURIComponent(callbackUrl)}&message=password-changed&username=${encodeURIComponent(data.username ?? username)}`;
@@ -118,7 +122,7 @@ function ChangePasswordForm() {
             setError(
                 submitError instanceof Error
                     ? submitError.message
-                    : 'ไม่สามารถเปลี่ยนรหัสผ่านได้',
+                    : messages.auth.changePassword.unableToChange,
             );
             setIsSubmitting(false);
         }
@@ -129,20 +133,22 @@ function ChangePasswordForm() {
             <FieldSet className="w-full max-w-sm">
                 <FieldGroup>
                     <Field className="hidden">
-                        <FieldLabel htmlFor="username">Username</FieldLabel>
+                        <FieldLabel htmlFor="username">
+                            {messages.auth.changePassword.username}
+                        </FieldLabel>
                         <Input
                             id="username"
                             type="text"
                             value={username}
                             readOnly
                             autoComplete="username"
-                            placeholder="Username"
+                            placeholder={messages.auth.changePassword.username}
                         />
                     </Field>
 
                     <Field>
                         <FieldLabel htmlFor="new-password">
-                            New Password
+                            {messages.auth.changePassword.newPassword}
                         </FieldLabel>
                         <PasswordInput
                             id="new-password"
@@ -151,7 +157,9 @@ function ChangePasswordForm() {
                                 setNewPassword(event.target.value)
                             }
                             autoComplete="new-password"
-                            placeholder="กรอกรหัสผ่านใหม่"
+                            placeholder={
+                                messages.auth.changePassword.newPassword
+                            }
                             required
                             minLength={14}
                         />
@@ -159,7 +167,7 @@ function ChangePasswordForm() {
 
                     <Field>
                         <FieldLabel htmlFor="confirm-new-password">
-                            Confirm New Password
+                            {messages.auth.changePassword.confirmNewPassword}
                         </FieldLabel>
                         <PasswordInput
                             id="confirm-new-password"
@@ -168,7 +176,9 @@ function ChangePasswordForm() {
                                 setConfirmPassword(event.target.value)
                             }
                             autoComplete="new-password"
-                            placeholder="ยืนยันรหัสผ่านใหม่"
+                            placeholder={
+                                messages.auth.changePassword.confirmNewPassword
+                            }
                             required
                             minLength={14}
                         />
@@ -184,27 +194,22 @@ function ChangePasswordForm() {
                         }
                     >
                         {isCheckingTicket
-                            ? 'กำลังตรวจสอบสิทธิ์...'
+                            ? messages.auth.changePassword.checkingAccess
                             : isSubmitting
-                              ? 'กำลังเปลี่ยนรหัสผ่าน...'
-                              : 'เปลี่ยนรหัสผ่าน'}
+                              ? messages.auth.changePassword.submitting
+                              : messages.auth.changePassword.submit}
                     </Button>
 
                     <div className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
                         <p className="font-bold text-slate-800">
-                            Password policy
+                            {messages.auth.changePassword.policyTitle}
                         </p>
                         <ul className="mt-2 list-disc space-y-1 pl-5">
-                            <li>ต้องมีความยาวอย่างน้อย 14 ตัวอักษร</li>
-                            <li>
-                                ต้องมีตัวพิมพ์ใหญ่ พิมพ์เล็ก ตัวเลข
-                                และอักขระพิเศษอย่างละ 1
-                            </li>
-                            <li>ต้องไม่เป็น pattern เรียงหรือเดาง่าย</li>
-                            <li>
-                                ต้องไม่ซ้ำกับรหัสผ่านปัจจุบันหรือประวัติรหัสผ่าน
-                                3 ครั้งล่าสุด
-                            </li>
+                            {messages.auth.changePassword.policyItems.map(
+                                (policyItem) => (
+                                    <li key={policyItem}>{policyItem}</li>
+                                ),
+                            )}
                         </ul>
                     </div>
 
@@ -228,7 +233,7 @@ function ChangePasswordForm() {
                         href={backToLoginHref}
                         className="text-sm text-blue-500 hover:underline"
                     >
-                        กลับไปหน้า Login
+                        {messages.auth.changePassword.backToLogin}
                     </Link>
                 </FieldGroup>
             </FieldSet>
@@ -237,6 +242,8 @@ function ChangePasswordForm() {
 }
 
 export default function ChangePasswordPage() {
+    const { messages } = useLocale();
+
     return (
         <div className="relative min-h-screen">
             <AuthPageShell />
@@ -245,18 +252,17 @@ export default function ChangePasswordPage() {
                     <div className="w-full max-w-md">
                         <div className="mb-8 text-center">
                             <h1 className="text-xl font-bold text-slate-800">
-                                Forgot Password
+                                {messages.auth.changePassword.title}
                             </h1>
                             <p className="mt-2 text-sm text-slate-500">
-                                กรอก username หรือ email
-                                เพื่อรับลิงก์สำหรับรีเซ็ตรหัสผ่าน
+                                {messages.auth.changePassword.subtitle}
                             </p>
                         </div>
                         <div className="w-full p-8">
                             <Suspense
                                 fallback={
                                     <div className="text-center text-sm text-slate-400">
-                                        Loading...
+                                        {messages.common.loading}
                                     </div>
                                 }
                             >

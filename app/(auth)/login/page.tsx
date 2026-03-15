@@ -5,6 +5,7 @@ import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import React, { useState, Suspense } from 'react';
 import { AuthPageShell } from '@/components/auth/AuthPageShell';
+import { useLocale } from '@/components/providers/LocaleProvider';
 import { Field, FieldGroup, FieldLabel, FieldSet } from '@/components/ui/field';
 
 import { Input } from '@/components/ui/input';
@@ -19,6 +20,7 @@ interface PasswordResetTicketResponse {
 
 /** ฟอร์ม Login — แยกออกมาเพราะใช้ useSearchParams (ต้องอยู่ใน Suspense) */
 function LoginForm() {
+    const { messages } = useLocale();
     const searchParams = useSearchParams();
     const callbackUrl = searchParams.get('callbackUrl') || '/';
     const errorParam = searchParams.get('error');
@@ -30,21 +32,18 @@ function LoginForm() {
     const [username, setUsername] = useState(usernameParam);
     const [password, setPassword] = useState('');
     const [isLoading, setIsLoading] = useState(false);
-    const [error, setError] = useState(() => {
-        if (codeParam === 'password-reset-required') {
-            return 'รหัสผ่านหมดอายุ กรุณาเปลี่ยนรหัสผ่านก่อนเข้าสู่ระบบ';
-        }
-
-        if (errorParam) {
-            return 'Username หรือ Password ไม่ถูกต้อง';
-        }
-
-        return '';
-    });
+    const [error, setError] = useState('');
+    const queryError =
+        codeParam === 'password-reset-required'
+            ? messages.auth.login.passwordExpiredError
+            : errorParam
+              ? messages.auth.login.invalidCredentials
+              : '';
     const successMessage =
         messageParam === 'password-changed'
-            ? 'เปลี่ยนรหัสผ่านเรียบร้อยแล้ว กรุณาเข้าสู่ระบบด้วยรหัสผ่านใหม่'
+            ? messages.auth.login.passwordChangedSuccess
             : '';
+    const displayedError = error || queryError;
 
     async function createPasswordResetTicket() {
         const response = await fetch('/api/auth/password-reset-ticket', {
@@ -59,7 +58,7 @@ function LoginForm() {
 
         if (!response.ok || !data.resetTicket) {
             throw new Error(
-                data.message ?? 'ไม่สามารถเริ่มขั้นตอนเปลี่ยนรหัสผ่านได้',
+                data.message ?? messages.auth.login.startResetFailed,
             );
         }
 
@@ -87,7 +86,7 @@ function LoginForm() {
                 setError(
                     ticketError instanceof Error
                         ? ticketError.message
-                        : 'ไม่สามารถเริ่มขั้นตอนเปลี่ยนรหัสผ่านได้',
+                        : messages.auth.login.startResetFailed,
                 );
                 setIsLoading(false);
             }
@@ -96,7 +95,7 @@ function LoginForm() {
         }
 
         if (result?.error) {
-            setError('Username หรือ Password ไม่ถูกต้อง');
+            setError(messages.auth.login.invalidCredentials);
             setIsLoading(false);
         } else {
             window.location.href = callbackUrl;
@@ -107,8 +106,12 @@ function LoginForm() {
         <form onSubmit={handleSubmit}>
             <FieldSet className="w-full">
                 <FieldGroup>
-                    <Field {...(error ? { 'data-invalid': true } : {})}>
-                        <FieldLabel htmlFor="username">Username</FieldLabel>
+                    <Field
+                        {...(displayedError ? { 'data-invalid': true } : {})}
+                    >
+                        <FieldLabel htmlFor="username">
+                            {messages.auth.login.username}
+                        </FieldLabel>
                         <Input
                             id="username"
                             type="text"
@@ -116,11 +119,15 @@ function LoginForm() {
                             onChange={(e) => setUsername(e.target.value)}
                             autoComplete="username"
                             required
-                            placeholder="Username"
+                            placeholder={messages.auth.login.username}
                         />
                     </Field>
-                    <Field {...(error ? { 'data-invalid': true } : {})}>
-                        <FieldLabel htmlFor="password">Password</FieldLabel>
+                    <Field
+                        {...(displayedError ? { 'data-invalid': true } : {})}
+                    >
+                        <FieldLabel htmlFor="password">
+                            {messages.auth.login.password}
+                        </FieldLabel>
                         <PasswordInput
                             id="password"
                             value={password}
@@ -131,22 +138,24 @@ function LoginForm() {
                         />
                     </Field>
                     <Button type="submit" disabled={isLoading}>
-                        {isLoading ? 'กำลังเข้าสู่ระบบ...' : 'เข้าสู่ระบบ'}
+                        {isLoading
+                            ? messages.common.signingIn
+                            : messages.auth.login.submit}
                     </Button>
                     <Link
                         href={forgotPasswordHref}
                         className="text-sm text-blue-500 hover:underline"
                     >
-                        ลืมรหัสผ่าน?
+                        {messages.auth.login.forgotPassword}
                     </Link>
                     {successMessage ? (
                         <div className="bg-emerald-50 border border-emerald-200 text-emerald-700 text-sm px-4 py-3 rounded-lg">
                             {successMessage}
                         </div>
                     ) : null}
-                    {error && (
+                    {displayedError && (
                         <div className="bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-3 rounded-lg">
-                            {error}
+                            {displayedError}
                         </div>
                     )}
                 </FieldGroup>
@@ -157,6 +166,8 @@ function LoginForm() {
 
 /** หน้า Login */
 export default function LoginPage() {
+    const { messages } = useLocale();
+
     return (
         <div className="relative min-h-screen">
             <AuthPageShell />
@@ -165,10 +176,10 @@ export default function LoginPage() {
                     <div className="w-full max-w-md">
                         <div className="text-center mb-8">
                             <h1 className="text-xl font-bold text-slate-800">
-                                Supply Chain Management
+                                {messages.auth.login.title}
                             </h1>
                             <p className="text-sm text-slate-500 mt-1">
-                                เข้าสู่ระบบเพื่อดำเนินการต่อ
+                                {messages.auth.login.subtitle}
                             </p>
                         </div>
 
@@ -176,7 +187,7 @@ export default function LoginPage() {
                             <Suspense
                                 fallback={
                                     <div className="text-center text-sm text-slate-400">
-                                        Loading...
+                                        {messages.common.loading}
                                     </div>
                                 }
                             >

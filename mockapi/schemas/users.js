@@ -8,6 +8,7 @@ const hashPassword = (password) =>
 
 // ฟังก์ชันสำหรับสร้าง User 1 คน
 const createUser = (id, groups = []) => ({
+    id: id,
     USR_ID: id,
     USR_LOGIN: `user${id}`,
     USR_PASSWORD: hashPassword(DEFAULT_PASSWORD),

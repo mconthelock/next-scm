@@ -1,4 +1,9 @@
+'use client';
+
+import { useLocale } from '@/components/providers/LocaleProvider';
+
 export function Footer() {
+    const { messages } = useLocale();
     const currentYear = new Date().getFullYear();
     return (
         <footer className="w-full bg-[#f8f8f8] border-t border-slate-200">
@@ -14,87 +19,60 @@ export function Footer() {
                             </span>
                         </div>
                         <p className="text-xs text-slate-500 max-w-xs leading-relaxed">
-                            มุ่งมั่นสร้างสรรค์สังคมที่ดีขึ้นผ่านเทคโนโลยีที่ล้ำสมัย
-                            ตามวิสัยทัศน์ "Changes for the Better"
+                            {messages.footer.description}
                         </p>
                     </div>
 
                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-12 gap-y-8">
                         <div className="flex flex-col gap-4">
                             <h4 className="text-[11px] font-bold uppercase tracking-widest text-slate-900">
-                                Products
+                                {messages.footer.products}
                             </h4>
                             <ul className="flex flex-col gap-2 text-xs text-slate-500">
-                                <li>
-                                    <a
-                                        href="#"
-                                        className="hover:text-brand"
-                                    >
-                                        Air Conditioning
-                                    </a>
-                                </li>
-                                <li>
-                                    <a
-                                        href="#"
-                                        className="hover:text-brand"
-                                    >
-                                        Automotive
-                                    </a>
-                                </li>
-                                <li>
-                                    <a
-                                        href="#"
-                                        className="hover:text-brand"
-                                    >
-                                        Factory Automation
-                                    </a>
-                                </li>
+                                {messages.footer.productLinks.map((label) => (
+                                    <li key={label}>
+                                        <a
+                                            href="#"
+                                            className="hover:text-brand"
+                                        >
+                                            {label}
+                                        </a>
+                                    </li>
+                                ))}
                             </ul>
                         </div>
                         <div className="flex flex-col gap-4">
                             <h4 className="text-[11px] font-bold uppercase tracking-widest text-slate-900">
-                                About
+                                {messages.footer.about}
                             </h4>
                             <ul className="flex flex-col gap-2 text-xs text-slate-500">
-                                <li>
-                                    <a
-                                        href="#"
-                                        className="hover:text-brand"
-                                    >
-                                        Our History
-                                    </a>
-                                </li>
-                                <li>
-                                    <a
-                                        href="#"
-                                        className="hover:text-brand"
-                                    >
-                                        Sustainability
-                                    </a>
-                                </li>
+                                {messages.footer.aboutLinks.map((label) => (
+                                    <li key={label}>
+                                        <a
+                                            href="#"
+                                            className="hover:text-brand"
+                                        >
+                                            {label}
+                                        </a>
+                                    </li>
+                                ))}
                             </ul>
                         </div>
                         <div className="flex flex-col gap-4">
                             <h4 className="text-[11px] font-bold uppercase tracking-widest text-slate-900">
-                                Support
+                                {messages.footer.support}
                             </h4>
                             <ul className="flex flex-col gap-2 text-xs text-slate-500">
-                                <li>
-                                    <a
-                                        href="#"
-                                        className="hover:text-brand"
-                                    >
-                                        Contact Us
-                                    </a>
-                                </li>
-                                <li>
-                                    <a
-                                        href="#"
-                                        className="hover:text-brand"
-                                    >
-                                        Legal Notice
-                                    </a>
-                                </li>
+                                {messages.footer.supportLinks.map((label) => (
+                                    <li key={label}>
+                                        <a
+                                            href="#"
+                                            className="hover:text-brand"
+                                        >
+                                            {label}
+                                        </a>
+                                    </li>
+                                ))}
                             </ul>
                         </div>
                     </div>
@@ -104,15 +82,14 @@ export function Footer() {
 
                 <div className="flex flex-col md:flex-row justify-between items-center gap-4 text-[10px] text-slate-400 font-medium uppercase tracking-widest">
                     <p>
-                        © {currentYear} Mitsubishi Electric SCM (Thailand) Co.,
-                        Ltd.
+                        © {currentYear} {messages.footer.copyright}
                     </p>
                     <div className="flex gap-6">
                         <a href="#" className="hover:text-brand">
-                            Privacy Policy
+                            {messages.footer.privacyPolicy}
                         </a>
                         <a href="#" className="hover:text-brand">
-                            Terms of Use
+                            {messages.footer.termsOfUse}
                         </a>
                     </div>
                 </div>

@@ -5,10 +5,7 @@ import { PageTitle } from '@/components/layout/PageTitle';
 export default function Home() {
     return (
         <>
-            <PageTitle
-                title="Supply Chain Management"
-                subtitle="ระบบจัดการห่วงโซ่อุปทานส่วนกลาง ออกแบบตามมาตรฐาน Mitsubishi Electric"
-            />
+            <PageTitle titleKey="scmTitle" subtitleKey="scmSubtitle" />
             <div className="flex-1 p-6 lg:p-10 max-w-7xl mx-auto w-full">
                 <div className="animate-in fade-in duration-1000">
                     {/* Mockup content ยาวๆ เพื่อให้ทดสอบการเลื่อนหน้าจอได้ชัดเจน */}

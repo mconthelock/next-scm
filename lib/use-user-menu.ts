@@ -20,6 +20,7 @@ interface UseUserMenuResult {
 export function useUserMenu(
     isLoggedIn: boolean,
     isSessionLoading: boolean,
+    locale: string,
     groupId?: number,
 ): UseUserMenuResult {
     const [navItems, setNavItems] = useState<MenuItem[]>(publicNavItems);
@@ -98,7 +99,7 @@ export function useUserMenu(
         return () => {
             isCancelled = true;
         };
-    }, [groupId, isLoggedIn, isSessionLoading, menuRetryKey]);
+    }, [groupId, isLoggedIn, isSessionLoading, locale, menuRetryKey]);
 
     return {
         navItems,

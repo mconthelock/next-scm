@@ -1,5 +1,6 @@
 'use client';
 import Image from 'next/image';
+import Link from 'next/link';
 import {
     Menu,
     X,
@@ -12,6 +13,11 @@ import {
 import React, { useState, useEffect } from 'react';
 import { useSession, signOut } from 'next-auth/react';
 import Logo from '../../public/logo.svg';
+import { LocaleSwitcher } from '@/components/layout/LocaleSwitcher';
+import { useLocale } from '@/components/providers/LocaleProvider';
+import { type MenuItem } from '@/lib/menu';
+import { translateMenuLabel } from '@/lib/i18n';
+import { useUserMenu } from '@/lib/use-user-menu';
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -19,35 +25,11 @@ import {
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 
-interface NavSubItem {
-    title: string;
-    href: string;
-    requireAuth?: boolean;
-}
-
-interface NavItem {
-    title: string;
-    href?: string;
-    children?: NavSubItem[];
-    requireAuth?: boolean;
-}
-
-/** รูปแบบ response ที่ได้จากเมนู API */
-interface MenuResponse {
-    MENU: NavItem[];
-}
-
-/** เมนู public สำหรับผู้ใช้ที่ยังไม่ login */
-const publicNavItems: NavItem[] = [
-    { title: 'Home', href: '/', requireAuth: false },
-    { title: 'About', href: '/about', requireAuth: false },
-];
-
 /** กรองเมนูตามสถานะ login */
 function getVisibleNavItems(
-    navItems: NavItem[],
+    navItems: MenuItem[],
     isLoggedIn: boolean,
-): NavItem[] {
+): MenuItem[] {
     return navItems
         .map((item) => ({
             ...item,
@@ -72,8 +54,8 @@ function getVisibleNavItems(
 
 export function Header() {
     // ดึง session จาก NextAuth — ได้ข้อมูล user + สถานะ login
-    const { data: session } = useSession();
-    const [navItems, setNavItems] = useState<NavItem[]>(publicNavItems);
+    const { data: session, status } = useSession();
+    const { locale, messages } = useLocale();
     const [showUserMenu, setShowUserMenu] = useState(false);
 
     const [isOpen, setIsOpen] = useState(false);
@@ -84,6 +66,13 @@ export function Header() {
     const [lastScrollY, setLastScrollY] = useState(0);
 
     const isLoggedIn = !!session?.user;
+    const isSessionLoading = status === 'loading';
+    const { navItems } = useUserMenu(
+        isLoggedIn,
+        isSessionLoading,
+        locale,
+        session?.user?.groupId,
+    );
     const visibleNavItems = getVisibleNavItems(navItems, isLoggedIn);
 
     // ข้อมูล user จาก session (มี role, department จาก JWT callback)
@@ -95,46 +84,6 @@ export function Header() {
               vendor: session.user.vendoder,
           }
         : null;
-
-    useEffect(() => {
-        let isCancelled = false;
-        async function loadMenu() {
-            if (!isLoggedIn) {
-                setNavItems(publicNavItems);
-                return;
-            }
-
-            if (!user?.groupId) {
-                setNavItems([]);
-                return;
-            }
-
-            try {
-                const response = await fetch(
-                    `${process.env.NEXT_PUBLIC_API}/authen/${user.groupId}`,
-                );
-                if (!response.ok) {
-                    throw new Error('Unable to load menu');
-                }
-
-                const data = (await response.json()) as MenuResponse;
-                console.log(data);
-
-                if (!isCancelled) {
-                    setNavItems(data.MENU);
-                }
-            } catch (error) {
-                console.error('Failed to load navigation menu', error);
-                if (!isCancelled) {
-                    setNavItems([]);
-                }
-            }
-        }
-        void loadMenu();
-        return () => {
-            isCancelled = true;
-        };
-    }, [isLoggedIn, user?.groupId]);
 
     useEffect(() => {
         const handleScroll = () => {
@@ -169,7 +118,7 @@ export function Header() {
                 isVisible ? 'translate-y-0' : '-translate-y-full'
             }`}
         >
-            <div className="max-w-300 mx-auto px-4 flex h-20 items-center justify-between bg-white shadow-sm">
+            <div className="max-w-345 mx-auto px-4 flex h-20 items-center justify-between bg-white shadow-sm">
                 {/* Logo Section */}
                 <div className="flex items-center gap-3 shrink-0">
                     <div className="flex items-center justify-center">
@@ -206,9 +155,12 @@ export function Header() {
                                                         asChild
                                                         key={child.title}
                                                     >
-                                                        <a href={child.href}>
-                                                            {child.title}
-                                                        </a>
+                                                        <Link href={child.href}>
+                                                            {translateMenuLabel(
+                                                                messages,
+                                                                child.title,
+                                                            )}
+                                                        </Link>
                                                     </DropdownMenuItem>
                                                 ))}
                                             </DropdownMenuContent>
@@ -217,15 +169,22 @@ export function Header() {
                                 );
                             }
 
+                            if (!item.href) {
+                                return null;
+                            }
+
                             return (
                                 <li key={item.title}>
-                                    <a
+                                    <Link
                                         href={item.href}
                                         className="text-[13px] font-bold uppercase tracking-wide text-slate-700 hover:text-brand transition-colors relative group py-2"
                                     >
-                                        {item.title}
+                                        {translateMenuLabel(
+                                            messages,
+                                            item.title,
+                                        )}
                                         <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-brand transition-all group-hover:w-full" />
-                                    </a>
+                                    </Link>
                                 </li>
                             );
                         })}
@@ -234,6 +193,7 @@ export function Header() {
 
                 {/* Tools Section — เปลี่ยนตามสถานะ login */}
                 <div className="flex items-center gap-1 shrink-0">
+                    <LocaleSwitcher className="hidden md:inline-flex" />
                     <div className="h-6 w-px bg-slate-200 mx-1 hidden md:block" />
 
                     {user ? (
@@ -264,23 +224,25 @@ export function Header() {
                                                 {user.name}
                                             </p>
                                             <p className="text-xs text-slate-500">
-                                                {user.role} · {'fff'}
+                                                {user.role ||
+                                                    messages.header
+                                                        .noRoleAssigned}
                                             </p>
                                         </div>
-                                        <a
+                                        <Link
                                             href="/profile"
                                             className="flex items-center gap-2 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50"
                                         >
                                             <User className="h-4 w-4" />
-                                            Profile
-                                        </a>
-                                        <a
+                                            {messages.header.profile}
+                                        </Link>
+                                        <Link
                                             href="/settings"
                                             className="flex items-center gap-2 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50"
                                         >
                                             <Settings className="h-4 w-4" />
-                                            Settings
-                                        </a>
+                                            {messages.header.settings}
+                                        </Link>
                                         <div className="border-t border-slate-100 mt-1 pt-1">
                                             <button
                                                 className="flex items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-red-50 w-full"
@@ -292,7 +254,7 @@ export function Header() {
                                                 }}
                                             >
                                                 <LogOut className="h-4 w-4" />
-                                                Logout
+                                                {messages.header.logout}
                                             </button>
                                         </div>
                                     </div>
@@ -301,13 +263,15 @@ export function Header() {
                         </div>
                     ) : (
                         /* --- ยังไม่ login: แสดงปุ่ม Login --- */
-                        <a
+                        <Link
                             href="/login"
                             className="flex items-center gap-2 px-3 py-2 hover:bg-slate-50 rounded-md text-slate-600 font-bold text-sm"
                         >
                             <User className="h-5 w-5" />
-                            <span className="hidden sm:block">Login</span>
-                        </a>
+                            <span className="hidden sm:block">
+                                {messages.header.login}
+                            </span>
+                        </Link>
                     )}
 
                     {/* Toggle Menu/X Icon: เปลี่ยนไอคอนตามสถานะ isOpen */}
@@ -346,6 +310,9 @@ export function Header() {
                 <div className="h-1 w-full bg-brand" />
                 <div className="flex flex-col h-full">
                     <nav className="flex-1 overflow-y-auto py-4">
+                        <div className="px-8 pb-4 lg:hidden">
+                            <LocaleSwitcher className="flex" />
+                        </div>
                         <ul className="flex flex-col">
                             {visibleNavItems.map((item) => {
                                 if (item.children?.length) {
@@ -366,7 +333,10 @@ export function Header() {
                                             >
                                                 <div className="flex items-center gap-3">
                                                     <ChevronLeft className="h-4 w-4 opacity-20" />
-                                                    {item.title}
+                                                    {translateMenuLabel(
+                                                        messages,
+                                                        item.title,
+                                                    )}
                                                 </div>
                                                 <ChevronDown
                                                     className={`h-4 w-4 transition-transform ${
@@ -386,7 +356,7 @@ export function Header() {
                                                                     child.title
                                                                 }
                                                             >
-                                                                <a
+                                                                <Link
                                                                     href={
                                                                         child.href
                                                                     }
@@ -400,10 +370,11 @@ export function Header() {
                                                                         );
                                                                     }}
                                                                 >
-                                                                    {
-                                                                        child.title
-                                                                    }
-                                                                </a>
+                                                                    {translateMenuLabel(
+                                                                        messages,
+                                                                        child.title,
+                                                                    )}
+                                                                </Link>
                                                             </li>
                                                         ),
                                                     )}
@@ -413,18 +384,25 @@ export function Header() {
                                     );
                                 }
 
+                                if (!item.href) {
+                                    return null;
+                                }
+
                                 return (
                                     <li key={item.title}>
-                                        <a
+                                        <Link
                                             href={item.href}
                                             className="flex items-center justify-between px-8 py-4 text-sm font-medium text-slate-700 hover:bg-slate-50 hover:text-brand transition-colors"
                                             onClick={() => setIsOpen(false)}
                                         >
                                             <div className="flex items-center gap-3">
                                                 <ChevronLeft className="h-4 w-4 opacity-20" />
-                                                {item.title}
+                                                {translateMenuLabel(
+                                                    messages,
+                                                    item.title,
+                                                )}
                                             </div>
-                                        </a>
+                                        </Link>
                                     </li>
                                 );
                             })}
@@ -443,7 +421,8 @@ export function Header() {
                                             {user.name}
                                         </p>
                                         <p className="text-xs text-slate-500">
-                                            {user.role}
+                                            {user.role ||
+                                                messages.header.noRoleAssigned}
                                         </p>
                                     </div>
                                 </div>
@@ -454,20 +433,22 @@ export function Header() {
                                         signOut({ callbackUrl: '/login' });
                                     }}
                                 >
-                                    <LogOut className="h-4 w-4" /> Logout
+                                    <LogOut className="h-4 w-4" />{' '}
+                                    {messages.header.logout}
                                 </button>
                             </>
                         ) : (
-                            <a
+                            <Link
                                 href="/login"
                                 className="w-full flex items-center justify-center gap-2 py-3 bg-[#333] text-white rounded font-bold text-sm"
                                 onClick={() => setIsOpen(false)}
                             >
-                                <User className="h-4 w-4" /> Account Login
-                            </a>
+                                <User className="h-4 w-4" />{' '}
+                                {messages.header.accountLogin}
+                            </Link>
                         )}
                         <p className="text-[10px] text-center text-slate-400 mt-4 uppercase tracking-widest font-bold">
-                            Changes for the Better
+                            {messages.header.mobileTagline}
                         </p>
                     </div>
                 </div>

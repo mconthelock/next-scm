@@ -14,7 +14,7 @@ const generateDB = () => {
     };
 
     let userGroupId = 1;
-    for (let i = 1; i <= 10; i++) {
+    for (let i = 1; i <= 1000; i++) {
         const assignedGroup =
             GROUP_DEFINITIONS[(i - 1) % GROUP_DEFINITIONS.length];
         if (i <= 3) {

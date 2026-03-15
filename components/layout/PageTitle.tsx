@@ -1,9 +1,19 @@
+'use client';
+
 import React from 'react';
 import Image from 'next/image';
 
+import { useLocale } from '@/components/providers/LocaleProvider';
+import type { PageTitleMessages } from '@/lib/i18n/messages/page-title';
+
+/** key ที่ใช้ map ข้อความจาก dictionary ของ PageTitle */
+type PageTitleMessageKey = keyof PageTitleMessages;
+
 interface PageTitleProps {
-    title: string;
+    title?: string;
     subtitle?: string;
+    titleKey?: PageTitleMessageKey;
+    subtitleKey?: PageTitleMessageKey;
     imageSrc?: string;
     imageAlt?: string;
     children?: React.ReactNode;
@@ -12,10 +22,20 @@ interface PageTitleProps {
 export function PageTitle({
     title,
     subtitle,
+    titleKey,
+    subtitleKey,
     imageSrc,
     imageAlt = '',
     children,
 }: PageTitleProps) {
+    const { messages } = useLocale();
+    const resolvedTitle = titleKey
+        ? messages.pageTitle[titleKey]
+        : (title ?? '');
+    const resolvedSubtitle = subtitleKey
+        ? messages.pageTitle[subtitleKey]
+        : subtitle;
+
     return (
         <section
             className={[
@@ -46,11 +66,11 @@ export function PageTitle({
             <div className="relative z-10 max-w-7xl mx-auto w-full px-6 lg:px-10 pb-10">
                 {children}
                 <h1 className="text-3xl lg:text-4xl font-bold tracking-tight">
-                    {title}
+                    {resolvedTitle}
                 </h1>
-                {subtitle && (
+                {resolvedSubtitle && (
                     <p className="mt-2 text-base lg:text-lg text-white/70">
-                        {subtitle}
+                        {resolvedSubtitle}
                     </p>
                 )}
             </div>
