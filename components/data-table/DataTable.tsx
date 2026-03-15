@@ -1,11 +1,9 @@
 'use client';
 
 import * as React from 'react';
-import { ArrowDown, ArrowUp, ArrowUpDown } from 'lucide-react';
 import {
-    type Column,
+    type ColumnFiltersState,
     type ColumnDef,
-    type Header,
     flexRender,
     SortingState,
     getCoreRowModel,
@@ -15,18 +13,28 @@ import {
     useReactTable,
 } from '@tanstack/react-table';
 
-import { useLocale } from '@/components/providers/LocaleProvider';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import {
-    Pagination,
-    PaginationContent,
-    PaginationEllipsis,
-    PaginationItem,
-    PaginationLink,
-    PaginationNext,
-    PaginationPrevious,
-} from '@/components/ui/pagination';
+    ALL_FILTER_OPTION_VALUE,
+    DataTableFilterBar,
+} from '@/components/data-table/DataTableFilterBar';
+import { DataTableMobileRow } from '@/components/data-table/DataTableMobileRow';
+import { DataTableMobileSort } from '@/components/data-table/DataTableMobileSort';
+import { DataTablePaginationFooter } from '@/components/data-table/DataTablePaginationFooter';
+import {
+    type DataTableFilterSelectItem,
+    type DataTableProps,
+} from '@/components/data-table/data-table-types';
+import {
+    buildPaginationItems,
+    formatPageStatus,
+    getColumnDefinitionId,
+    getColumnLabel,
+    isDesktopVisibleColumn,
+    isMobileDetailColumn,
+    isMobileSummaryColumn,
+    renderTableHeader,
+} from '@/components/data-table/data-table-utils';
+import { useLocale } from '@/components/providers/LocaleProvider';
 import {
     Table,
     TableBody,
@@ -36,159 +44,26 @@ import {
     TableRow,
 } from '@/components/ui/table';
 
-/** props ของตารางกลางที่ใช้ซ้ำได้หลายหน้า */
-export interface DataTableProps<TData, TValue> {
-    columns: ColumnDef<TData, TValue>[];
-    data: TData[];
-    /** id ของคอลัมน์ที่อนุญาตให้ search/filter จาก input ด้านบน */
-    filterColumnId?: string;
-    /** รายชื่อคอลัมน์ที่อนุญาตให้ search/filter พร้อมกันหลายคอลัมน์ */
-    filterColumnIds?: string[];
-    /** placeholder สำหรับช่องค้นหา */
-    filterPlaceholder?: string;
-}
-
-/** meta เพิ่มเติมของคอลัมน์ที่ DataTable ใช้จัดการ UX บน mobile และ i18n */
-type DataTableColumnMeta = {
-    /** key สำหรับ map label ด้วย messages.table.columnLabels */
-    i18nLabelKey?: string;
-    /** ซ่อนฟิลด์นี้จาก mobile card view */
-    mobileHidden?: boolean;
-};
-
-function buildPaginationItems(currentPage: number, totalPages: number) {
-    if (totalPages <= 5) {
-        return Array.from({ length: totalPages }, (_, index) => index);
-    }
-
-    if (currentPage <= 2) {
-        return [0, 1, 2, 'ellipsis-right', totalPages - 1] as const;
-    }
-
-    if (currentPage >= totalPages - 3) {
-        return [
-            0,
-            'ellipsis-left',
-            totalPages - 3,
-            totalPages - 2,
-            totalPages - 1,
-        ] as const;
-    }
-
-    return [
-        0,
-        'ellipsis-left',
-        currentPage - 1,
-        currentPage,
-        currentPage + 1,
-        'ellipsis-right',
-        totalPages - 1,
-    ] as const;
-}
-
-function formatPageStatus(template: string, current: number, total: number) {
-    return template
-        .replace('{current}', String(current))
-        .replace('{total}', String(total));
-}
-
-function getColumnMeta<TData>(
-    column: Column<TData, unknown>,
-): DataTableColumnMeta {
-    return (column.columnDef.meta as DataTableColumnMeta | undefined) ?? {};
-}
-
-function getLocalizedLabel(
-    labels: Record<string, string>,
-    key: string,
-    fallback: string,
-) {
-    return labels[key] ?? fallback;
-}
-
-function renderTableHeader<TData>(
-    header: Header<TData, unknown>,
-    labels: Record<string, string>,
-) {
-    const headerContent = header.column.columnDef.header;
-    const meta = getColumnMeta(header.column);
-    const translatedLabel =
-        typeof headerContent === 'string'
-            ? getLocalizedLabel(
-                  labels,
-                  meta.i18nLabelKey ?? headerContent,
-                  headerContent,
-              )
-            : null;
-
-    if (typeof headerContent === 'string' && header.column.getCanSort()) {
-        return (
-            <Button
-                variant="ghost"
-                className="-ml-3 h-8"
-                onClick={() =>
-                    header.column.toggleSorting(
-                        header.column.getIsSorted() === 'asc',
-                    )
-                }
-            >
-                {translatedLabel}
-                {header.column.getIsSorted() === 'asc' ? (
-                    <ArrowUp className="ml-2 h-4 w-4" />
-                ) : header.column.getIsSorted() === 'desc' ? (
-                    <ArrowDown className="ml-2 h-4 w-4" />
-                ) : (
-                    <ArrowUpDown className="ml-2 h-4 w-4" />
-                )}
-            </Button>
-        );
-    }
-
-    return flexRender(headerContent, header.getContext());
-}
-
-function humanizeColumnId(id: string) {
-    return id
-        .replace(/_/g, ' ')
-        .toLowerCase()
-        .replace(/\b\w/g, (char) => char.toUpperCase());
-}
-
-function getColumnLabel<TData>(
-    column: Column<TData, unknown>,
-    labels: Record<string, string>,
-) {
-    const headerContent = column.columnDef.header;
-    const meta = getColumnMeta(column);
-
-    if (typeof headerContent === 'string') {
-        return getLocalizedLabel(
-            labels,
-            meta.i18nLabelKey ?? headerContent,
-            headerContent,
-        );
-    }
-
-    if (meta.i18nLabelKey) {
-        return getLocalizedLabel(
-            labels,
-            meta.i18nLabelKey,
-            humanizeColumnId(column.id),
-        );
-    }
-
-    return humanizeColumnId(column.id);
-}
-
 export function DataTable<TData, TValue>({
     columns,
     data,
     filterColumnId,
     filterColumnIds,
     filterPlaceholder,
+    pageSize = 10,
+    selectFilters = [],
 }: DataTableProps<TData, TValue>) {
     const [sorting, setSorting] = React.useState<SortingState>([]);
     const [globalFilter, setGlobalFilter] = React.useState('');
+    const [columnFilters, setColumnFilters] =
+        React.useState<ColumnFiltersState>([]);
+    const [expandedMobileRows, setExpandedMobileRows] = React.useState<
+        Record<string, boolean>
+    >({});
+    const [paginationState, setPaginationState] = React.useState({
+        pageIndex: 0,
+        pageSize,
+    });
     const { messages } = useLocale();
     const searchableColumnIds = React.useMemo(() => {
         if (filterColumnIds?.length) {
@@ -198,12 +73,39 @@ export function DataTable<TData, TValue>({
         return filterColumnId ? [filterColumnId] : [];
     }, [filterColumnId, filterColumnIds]);
     const columnLabels = messages.table.columnLabels;
+    const selectFilterColumnIds = React.useMemo(
+        () => new Set(selectFilters.map((filter) => filter.columnId)),
+        [selectFilters],
+    );
+
+    const enhancedColumns = React.useMemo(
+        () =>
+            columns.map((column) => {
+                const columnId = getColumnDefinitionId(column);
+
+                if (!columnId || !selectFilterColumnIds.has(columnId)) {
+                    return column;
+                }
+
+                if ('filterFn' in column && column.filterFn) {
+                    return column;
+                }
+
+                return {
+                    ...column,
+                    filterFn: 'equalsString',
+                } satisfies ColumnDef<TData, TValue>;
+            }),
+        [columns, selectFilterColumnIds],
+    );
 
     const table = useReactTable({
         data,
-        columns,
+        columns: enhancedColumns,
         getCoreRowModel: getCoreRowModel(),
         getPaginationRowModel: getPaginationRowModel(),
+        onColumnFiltersChange: setColumnFilters,
+        onPaginationChange: setPaginationState,
         onSortingChange: setSorting,
         getSortedRowModel: getSortedRowModel(),
         onGlobalFilterChange: setGlobalFilter,
@@ -212,10 +114,26 @@ export function DataTable<TData, TValue>({
         getColumnCanGlobalFilter: (column) =>
             searchableColumnIds.includes(column.id),
         state: {
+            columnFilters,
+            pagination: paginationState,
             sorting,
             globalFilter,
         },
     });
+
+    React.useEffect(() => {
+        setPaginationState((currentPagination) => {
+            if (currentPagination.pageSize === pageSize) {
+                return currentPagination;
+            }
+
+            return {
+                pageIndex: 0,
+                pageSize,
+            };
+        });
+    }, [pageSize]);
+
     const showFilter = searchableColumnIds.length > 0;
     const sortableColumns = table
         .getAllLeafColumns()
@@ -228,106 +146,133 @@ export function DataTable<TData, TValue>({
     const totalPages = table.getPageCount();
     const pageItems = buildPaginationItems(currentPage, totalPages);
     const currentPageLabel = totalPages === 0 ? 0 : currentPage + 1;
+    const desktopLeafColumnCount = table
+        .getAllLeafColumns()
+        .filter(isDesktopVisibleColumn).length;
+    const mobileRowCellGroups = React.useMemo(
+        () =>
+            table.getRowModel().rows.map((row) => ({
+                row,
+                summaryCells: row
+                    .getVisibleCells()
+                    .filter((cell) => isMobileSummaryColumn(cell.column)),
+                detailCells: row
+                    .getVisibleCells()
+                    .filter((cell) => isMobileDetailColumn(cell.column)),
+            })),
+        [table],
+    );
+    const filterBarSelectItems = React.useMemo<DataTableFilterSelectItem[]>(
+        () =>
+            selectFilters
+                .map((filter) => {
+                    const column = table.getColumn(filter.columnId);
+
+                    if (!column) {
+                        return null;
+                    }
+
+                    return {
+                        columnId: filter.columnId,
+                        placeholder: filter.placeholder,
+                        options: filter.options,
+                        selectedValue:
+                            (column.getFilterValue() as string | undefined) ??
+                            ALL_FILTER_OPTION_VALUE,
+                        onValueChange: (nextValue: string) => {
+                            column.setFilterValue(
+                                nextValue === ALL_FILTER_OPTION_VALUE
+                                    ? undefined
+                                    : nextValue,
+                            );
+                        },
+                    } satisfies DataTableFilterSelectItem;
+                })
+                .filter(
+                    (filter): filter is DataTableFilterSelectItem =>
+                        filter !== null,
+                ),
+        [selectFilters, table],
+    );
+
+    function toggleMobileRow(rowId: string) {
+        setExpandedMobileRows((currentRows) => ({
+            ...currentRows,
+            [rowId]: !currentRows[rowId],
+        }));
+    }
 
     return (
         <>
-            {showFilter ? (
-                <div className="flex items-center py-4">
-                    <Input
-                        placeholder={
-                            filterPlaceholder ??
-                            messages.table.filterPlaceholder
-                        }
-                        value={globalFilter}
-                        onChange={(event) =>
-                            setGlobalFilter(event.target.value)
-                        }
-                        className="max-w-sm"
-                    />
-                </div>
-            ) : null}
-            {sortableColumns.length > 0 ? (
-                <div className="mb-3 flex items-center gap-2 md:hidden">
-                    <span className="text-xs font-medium text-slate-500">
-                        {messages.table.sortColumnLabel}
-                    </span>
-                    <select
-                        value={mobileSortColumnId}
-                        onChange={(event) => {
-                            const nextColumnId = event.target.value;
-                            if (!nextColumnId) {
-                                setSorting([]);
-                                return;
-                            }
+            <DataTableFilterBar
+                showFilter={showFilter}
+                filterPlaceholder={
+                    filterPlaceholder ?? messages.table.filterPlaceholder
+                }
+                globalFilter={globalFilter}
+                onGlobalFilterChange={setGlobalFilter}
+                selectFilters={filterBarSelectItems}
+            />
 
-                            setSorting([
-                                {
-                                    id: nextColumnId,
-                                    desc: false,
-                                },
-                            ]);
-                        }}
-                        className="h-9 rounded-md border border-input bg-transparent px-3 text-sm"
-                        aria-label={messages.table.sortColumnLabel}
-                    >
-                        {sortableColumns.map((column) => (
-                            <option key={column.id} value={column.id}>
-                                {getColumnLabel(column, columnLabels)}
-                            </option>
-                        ))}
-                    </select>
+            <DataTableMobileSort
+                sortableColumns={sortableColumns}
+                mobileSortColumnId={mobileSortColumnId}
+                activeSort={activeSort}
+                sortColumnLabel={messages.table.sortColumnLabel}
+                sortDirectionAsc={messages.table.sortDirectionAsc}
+                sortDirectionDesc={messages.table.sortDirectionDesc}
+                getColumnLabel={(column) =>
+                    getColumnLabel(column, columnLabels)
+                }
+                onColumnChange={(nextColumnId) => {
+                    if (!nextColumnId) {
+                        setSorting([]);
+                        return;
+                    }
 
-                    <Button
-                        type="button"
-                        variant="outline"
-                        className="h-9 w-9 p-0"
-                        onClick={() => {
-                            if (!mobileSortColumnId) {
-                                return;
-                            }
+                    setSorting([
+                        {
+                            id: nextColumnId,
+                            desc: false,
+                        },
+                    ]);
+                }}
+                onDirectionToggle={() => {
+                    if (!mobileSortColumnId) {
+                        return;
+                    }
 
-                            setSorting([
-                                {
-                                    id: mobileSortColumnId,
-                                    desc: !activeSort?.desc,
-                                },
-                            ]);
-                        }}
-                        disabled={!mobileSortColumnId}
-                        aria-label={
-                            activeSort?.desc
-                                ? messages.table.sortDirectionDesc
-                                : messages.table.sortDirectionAsc
-                        }
-                    >
-                        {activeSort ? (
-                            activeSort.desc ? (
-                                <ArrowDown className="h-4 w-4" />
-                            ) : (
-                                <ArrowUp className="h-4 w-4" />
-                            )
-                        ) : (
-                            <ArrowUpDown className="h-4 w-4" />
-                        )}
-                    </Button>
-                </div>
-            ) : null}
+                    setSorting([
+                        {
+                            id: mobileSortColumnId,
+                            desc: !activeSort?.desc,
+                        },
+                    ]);
+                }}
+            />
 
             <div className="overflow-hidden rounded-md border md:block hidden">
                 <Table>
                     <TableHeader>
                         {table.getHeaderGroups().map((headerGroup) => (
                             <TableRow key={headerGroup.id}>
-                                {headerGroup.headers.map((header) => (
-                                    <TableHead key={header.id} className="px-3">
-                                        {header.isPlaceholder
-                                            ? null
-                                            : renderTableHeader(
-                                                  header,
-                                                  columnLabels,
-                                              )}
-                                    </TableHead>
-                                ))}
+                                {headerGroup.headers
+                                    .filter((header) =>
+                                        isDesktopVisibleColumn(header.column),
+                                    )
+                                    .map((header) => (
+                                        <TableHead
+                                            key={header.id}
+                                            className="px-3"
+                                        >
+                                            {header.isPlaceholder
+                                                ? null
+                                                : renderTableHeader(
+                                                      header,
+                                                      columnLabels,
+                                                  )}
+                                        </TableHead>
+                                    ))}
                             </TableRow>
                         ))}
                     </TableHeader>
@@ -340,23 +285,28 @@ export function DataTable<TData, TValue>({
                                         row.getIsSelected() && 'selected'
                                     }
                                 >
-                                    {row.getVisibleCells().map((cell) => (
-                                        <TableCell
-                                            key={cell.id}
-                                            className="px-3"
-                                        >
-                                            {flexRender(
-                                                cell.column.columnDef.cell,
-                                                cell.getContext(),
-                                            )}
-                                        </TableCell>
-                                    ))}
+                                    {row
+                                        .getVisibleCells()
+                                        .filter((cell) =>
+                                            isDesktopVisibleColumn(cell.column),
+                                        )
+                                        .map((cell) => (
+                                            <TableCell
+                                                key={cell.id}
+                                                className="px-3"
+                                            >
+                                                {flexRender(
+                                                    cell.column.columnDef.cell,
+                                                    cell.getContext(),
+                                                )}
+                                            </TableCell>
+                                        ))}
                                 </TableRow>
                             ))
                         ) : (
                             <TableRow>
                                 <TableCell
-                                    colSpan={columns.length}
+                                    colSpan={desktopLeafColumnCount}
                                     className="h-24 text-center"
                                 >
                                     {messages.table.noResults}
@@ -368,41 +318,22 @@ export function DataTable<TData, TValue>({
             </div>
 
             <div className="space-y-3 md:hidden">
-                {table.getRowModel().rows?.length ? (
-                    table.getRowModel().rows.map((row) => (
-                        <div
-                            key={row.id}
-                            className="rounded-md border border-slate-200 bg-white p-3"
-                        >
-                            <dl className="space-y-2">
-                                {row
-                                    .getVisibleCells()
-                                    .filter((cell) => {
-                                        const meta = getColumnMeta(cell.column);
-                                        return !meta.mobileHidden;
-                                    })
-                                    .map((cell) => (
-                                        <div
-                                            key={cell.id}
-                                            className="flex items-start justify-between gap-3"
-                                        >
-                                            <dt className="pt-0.5 text-xs font-medium text-slate-500">
-                                                {getColumnLabel(
-                                                    cell.column,
-                                                    columnLabels,
-                                                )}
-                                            </dt>
-                                            <dd className="min-w-0 text-right text-sm text-slate-700">
-                                                {flexRender(
-                                                    cell.column.columnDef.cell,
-                                                    cell.getContext(),
-                                                )}
-                                            </dd>
-                                        </div>
-                                    ))}
-                            </dl>
-                        </div>
-                    ))
+                {mobileRowCellGroups.length ? (
+                    mobileRowCellGroups.map(
+                        ({ row, summaryCells, detailCells }) => (
+                            <DataTableMobileRow
+                                key={row.id}
+                                rowId={row.id}
+                                summaryCells={summaryCells}
+                                detailCells={detailCells}
+                                columnLabels={columnLabels}
+                                isExpanded={expandedMobileRows[row.id] ?? false}
+                                showMoreLabel={messages.table.showMore}
+                                showLessLabel={messages.table.showLess}
+                                onToggle={toggleMobileRow}
+                            />
+                        ),
+                    )
                 ) : (
                     <div className="rounded-md border border-slate-200 bg-white p-6 text-center text-sm text-slate-500">
                         {messages.table.noResults}
@@ -410,86 +341,29 @@ export function DataTable<TData, TValue>({
                 )}
             </div>
 
-            <div className="flex flex-col gap-3 py-4 sm:flex-row sm:items-center sm:justify-between">
-                <p className="text-sm text-slate-500">
-                    {formatPageStatus(
-                        messages.table.pageStatus,
-                        currentPageLabel,
-                        totalPages,
-                    )}
-                </p>
-
-                <Pagination className="mx-0 w-auto justify-end">
-                    <PaginationContent>
-                        <PaginationItem>
-                            <PaginationPrevious
-                                href="#"
-                                onClick={(event) => {
-                                    event.preventDefault();
-                                    table.previousPage();
-                                }}
-                                aria-label={messages.table.previous}
-                                aria-disabled={!table.getCanPreviousPage()}
-                                className={
-                                    !table.getCanPreviousPage()
-                                        ? 'pointer-events-none opacity-50'
-                                        : ''
-                                }
-                            >
-                                {messages.table.previous}
-                            </PaginationPrevious>
-                        </PaginationItem>
-
-                        {pageItems.map((item, index) => {
-                            if (typeof item === 'string') {
-                                return (
-                                    <PaginationItem key={`${item}-${index}`}>
-                                        <PaginationEllipsis>
-                                            {messages.table.morePages}
-                                        </PaginationEllipsis>
-                                    </PaginationItem>
-                                );
-                            }
-
-                            const pageNumber = item + 1;
-
-                            return (
-                                <PaginationItem key={pageNumber}>
-                                    <PaginationLink
-                                        href="#"
-                                        isActive={currentPage === item}
-                                        onClick={(event) => {
-                                            event.preventDefault();
-                                            table.setPageIndex(item);
-                                        }}
-                                    >
-                                        {pageNumber}
-                                    </PaginationLink>
-                                </PaginationItem>
-                            );
-                        })}
-
-                        <PaginationItem>
-                            <PaginationNext
-                                href="#"
-                                onClick={(event) => {
-                                    event.preventDefault();
-                                    table.nextPage();
-                                }}
-                                aria-label={messages.table.next}
-                                aria-disabled={!table.getCanNextPage()}
-                                className={
-                                    !table.getCanNextPage()
-                                        ? 'pointer-events-none opacity-50'
-                                        : ''
-                                }
-                            >
-                                {messages.table.next}
-                            </PaginationNext>
-                        </PaginationItem>
-                    </PaginationContent>
-                </Pagination>
-            </div>
+            <DataTablePaginationFooter
+                pageStatusLabel={formatPageStatus(
+                    messages.table.pageStatus,
+                    currentPageLabel,
+                    totalPages,
+                )}
+                previousLabel={messages.table.previous}
+                nextLabel={messages.table.next}
+                morePagesLabel={messages.table.morePages}
+                currentPage={currentPage}
+                pageItems={pageItems}
+                canPreviousPage={table.getCanPreviousPage()}
+                canNextPage={table.getCanNextPage()}
+                onPreviousPage={() => {
+                    table.previousPage();
+                }}
+                onNextPage={() => {
+                    table.nextPage();
+                }}
+                onPageChange={(pageIndex) => {
+                    table.setPageIndex(pageIndex);
+                }}
+            />
         </>
     );
 }

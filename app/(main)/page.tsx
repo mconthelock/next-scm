@@ -1,11 +1,10 @@
-import Image from 'next/image';
 import { ChevronRight } from 'lucide-react';
-import { PageTitle } from '@/components/layout/PageTitle';
+import { HomeGreeting } from '@/components/home/HomeGreeting';
 
 export default function Home() {
     return (
-        <>
-            <PageTitle titleKey="scmTitle" subtitleKey="scmSubtitle" />
+        <div>
+            <HomeGreeting />
             <div className="flex-1 p-6 lg:p-10 max-w-7xl mx-auto w-full">
                 <div className="animate-in fade-in duration-1000">
                     {/* Mockup content ยาวๆ เพื่อให้ทดสอบการเลื่อนหน้าจอได้ชัดเจน */}
@@ -33,6 +32,6 @@ export default function Home() {
                     </div>
                 </div>
             </div>
-        </>
+        </div>
     );
 }

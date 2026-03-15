@@ -4,10 +4,10 @@ import { signIn } from 'next-auth/react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import React, { useState, Suspense } from 'react';
+
 import { AuthPageShell } from '@/components/auth/AuthPageShell';
 import { useLocale } from '@/components/providers/LocaleProvider';
 import { Field, FieldGroup, FieldLabel, FieldSet } from '@/components/ui/field';
-
 import { Input } from '@/components/ui/input';
 import { PasswordInput } from '@/components/ui/password-input';
 import { Button } from '@/components/ui/button';

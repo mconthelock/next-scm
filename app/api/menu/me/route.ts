@@ -43,10 +43,13 @@ function mapMenuItem(item: RawMenuItem, locale: Locale): MenuItem {
     };
 }
 
-export async function GET() {
+export async function GET(request: Request) {
     const session = await auth();
     const cookieStore = await cookies();
-    const locale = resolveLocale(cookieStore.get(LOCALE_COOKIE_NAME)?.value);
+    const requestLocale = new URL(request.url).searchParams.get('locale');
+    const locale = resolveLocale(
+        requestLocale ?? cookieStore.get(LOCALE_COOKIE_NAME)?.value,
+    );
 
     if (!session?.user?.groupId) {
         return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
@@ -68,9 +71,16 @@ export async function GET() {
 
     const menuRecords = (await response.json()) as AuthenMenuRecord[];
 
-    return NextResponse.json<MenuResponse>({
-        menu: (menuRecords[0]?.MENU ?? []).map((item) =>
-            mapMenuItem(item, locale),
-        ),
-    });
+    return NextResponse.json(
+        {
+            menu: (menuRecords[0]?.MENU ?? []).map((item) =>
+                mapMenuItem(item, locale),
+            ),
+        } satisfies MenuResponse,
+        {
+            headers: {
+                'Cache-Control': 'no-store, max-age=0',
+            },
+        },
+    );
 }

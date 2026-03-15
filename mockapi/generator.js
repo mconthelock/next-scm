@@ -1,39 +1,69 @@
 const fs = require('fs');
 const path = require('path');
+const { faker } = require('@faker-js/faker');
 
 // Import Templates
-const userTemplate = require('./schemas/users');
 const { createUserGroup, GROUP_DEFINITIONS } = require('./schemas/users_group');
 const { createMenuUser, MENU_DEFINITIONS } = require('./schemas/menu');
+const { createStatus, STATUS_DEFINITIONS } = require('./schemas/status');
+const createUser = require('./schemas/users');
+const createVendor = require('./schemas/vendors');
+const createVendorCode = require('./schemas/vendors_code');
+
+function getRandom(min, max) {
+    min = Math.ceil(min);
+    max = Math.floor(max);
+    return Math.floor(Math.random() * (max - min) + min);
+}
 
 const generateDB = () => {
     const db = {
+        status: [],
         users: [],
         users_group: [],
+        vendors: [],
         authen: [],
     };
+    // สร้าง status
+    db.status = STATUS_DEFINITIONS.map(createStatus);
 
-    let userGroupId = 1;
-    for (let i = 1; i <= 1000; i++) {
-        const assignedGroup =
-            GROUP_DEFINITIONS[(i - 1) % GROUP_DEFINITIONS.length];
-        if (i <= 3) {
-            db.users_group.push(createUserGroup(userGroupId, i, assignedGroup));
+    // สร้าง vendor และ vendor code
+    const usedCodes = new Set();
+    for (let i = 1; i <= 1250; i++) {
+        const vendor = createVendor(i);
+        const codeCount = faker.number.int({ min: 1, max: 3 });
+
+        for (let j = 0; j < codeCount; j++) {
+            let uniqueCode;
+            do {
+                uniqueCode = faker.number
+                    .int({ min: 10000, max: 99999 })
+                    .toString();
+            } while (usedCodes.has(uniqueCode));
+            usedCodes.add(uniqueCode);
+
+            const newCode = createVendorCode(vendor.VND_ID, uniqueCode);
+            vendor.VENDOR_CODES.push(newCode);
         }
-        db.users.push(
-            userTemplate(i, [
-                {
-                    GRP_ID: assignedGroup.GRP_ID,
-                    GRP_CODE: assignedGroup.GRP_CODE,
-                    GRP_NAME: assignedGroup.GRP_NAME,
-                },
-            ]),
-        );
+        db.vendors.push(vendor);
+    }
 
-        userGroupId += 1;
+    // สร้าง User Group และ User
+    db.users_group = GROUP_DEFINITIONS.map(createUserGroup);
+    for (let i = 1; i <= 1000; i++) {
+        const userStatus = db.status.filter(
+            (status) => status.TYPE === 'USERS',
+        );
+        const randomStatus = userStatus[getRandom(0, userStatus.length)];
+        const randomGroup = db.users_group[getRandom(0, db.users_group.length)];
+        let vndData = null;
+        if (randomGroup.GRP_ID === 3) {
+            vndData = db.vendors[getRandom(0, db.vendors.length)];
+        }
+        let users = createUser(i, randomStatus, randomGroup, vndData);
+        db.users.push(users);
     }
     db.authen = createMenuUser(MENU_DEFINITIONS);
-
     return db;
 };
 

@@ -7,7 +7,7 @@ const hashPassword = (password) =>
     crypto.createHash('md5').update(password).digest('hex');
 
 // ฟังก์ชันสำหรับสร้าง User 1 คน
-const createUser = (id, groups = []) => ({
+const createUser = (id, status, group, vnd) => ({
     id: id,
     USR_ID: id,
     USR_LOGIN: `user${id}`,
@@ -18,10 +18,10 @@ const createUser = (id, groups = []) => ({
     USR_NAME: faker.person.fullName(),
     USR_EMAIL: faker.internet.email(),
     USR_POSITION: faker.person.jobTitle(),
-    USER_STATUS: 1,
     USR_RESETDATE: faker.date.past().toISOString(),
-    GROUPS: groups,
-    VENDORS: 0,
+    USER_STATUS: status,
+    GROUPS: group,
+    VENDORS: vnd,
     USR_CREATED: faker.date.past().toISOString(),
 });
 

@@ -1,36 +1,90 @@
+'use client';
+
+import React, { useMemo } from 'react';
 import { PageTitle } from '@/components/layout/PageTitle';
-import { columns, Users } from './columns';
+import { columns } from './columns';
 import { DataTable } from '@/components/data-table/DataTable';
+import { Button } from '@/components/ui/button';
+import { useUsers } from './use-users';
+import { useLocale } from '@/components/providers/LocaleProvider';
 
-async function getData(): Promise<Users[]> {
-    // Fetch data from your API here.
-    const response = await fetch(`${process.env.APP_API_URL}/users`, {
-        cache: 'no-store',
-    });
+function PageForm() {
+    const { data, isLoading, loadError, retryLoadUsers } = useUsers();
+    const { locale } = useLocale();
+    const groupOptions = useMemo(
+        () =>
+            Array.from(
+                new Set(
+                    data
+                        .map((user) => user.GROUPS?.GRP_NAME)
+                        .filter((groupName): groupName is string =>
+                            Boolean(groupName),
+                        ),
+                ),
+            )
+                .sort((left, right) => left.localeCompare(right, locale))
+                .map((groupName) => ({
+                    label: groupName,
+                    value: groupName,
+                })),
+        [data, locale],
+    );
 
-    if (!response.ok) {
-        throw new Error('Failed to fetch users');
-    }
+    return (
+        <div>
+            {loadError ? (
+                <div className="mb-4 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                    <p>{loadError}</p>
+                    <Button
+                        type="button"
+                        variant="outline"
+                        className="mt-3"
+                        onClick={() => {
+                            void retryLoadUsers();
+                        }}
+                    >
+                        Retry
+                    </Button>
+                </div>
+            ) : null}
 
-    const data = (await response.json()) as Users[];
-    return data;
+            <DataTable
+                columns={columns}
+                data={data}
+                filterColumnIds={[
+                    'USR_LOGIN',
+                    'USR_NAME',
+                    'USR_EMAIL',
+                    'VENDORS',
+                ]}
+                selectFilters={[
+                    {
+                        columnId: 'GROUPS',
+                        placeholder:
+                            locale === 'th' ? 'ทุกกลุ่มผู้ใช้' : 'All groups',
+                        options: groupOptions,
+                    },
+                ]}
+                pageSize={20}
+            />
+            <Button className="mt-4" variant="outline" disabled={isLoading}>
+                {isLoading ? 'Loading...' : 'Export Excel'}
+            </Button>
+        </div>
+    );
 }
 
-export default async function Page() {
-    const data = await getData();
+export default function Page() {
     return (
-        <>
+        <div>
             <PageTitle
                 titleKey="adminUserTitle"
                 subtitleKey="adminUserSubtitle"
+                imageSrc="/bg_pagetitle_01_lg.jpg"
             />
             <div className="container mx-auto p-6 lg:px-10">
-                <DataTable
-                    columns={columns}
-                    data={data}
-                    filterColumnIds={['USR_LOGIN', 'USR_NAME', 'USR_EMAIL']}
-                />
+                <PageForm />
             </div>
-        </>
+        </div>
     );
 }

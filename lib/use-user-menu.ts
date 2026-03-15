@@ -58,7 +58,13 @@ export function useUserMenu(
                 setIsMenuLoading(true);
                 setMenuError(null);
 
-                const response = await fetch('/api/menu/me');
+                const searchParams = new URLSearchParams({ locale });
+                const response = await fetch(
+                    `/api/menu/me?${searchParams.toString()}`,
+                    {
+                        cache: 'no-store',
+                    },
+                );
                 const payload = (await response.json().catch(() => null)) as
                     | MenuResponse
                     | MenuErrorResponse

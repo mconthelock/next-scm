@@ -14,9 +14,29 @@ interface PageTitleProps {
     subtitle?: string;
     titleKey?: PageTitleMessageKey;
     subtitleKey?: PageTitleMessageKey;
+    /** ค่าที่ใช้แทน placeholder เช่น {name} ในข้อความ title */
+    titleParams?: Record<string, string | number>;
+    /** ค่าที่ใช้แทน placeholder เช่น {name} ในข้อความ subtitle */
+    subtitleParams?: Record<string, string | number>;
     imageSrc?: string;
+    isHomepage?: boolean;
     imageAlt?: string;
     children?: React.ReactNode;
+}
+
+function interpolateMessage(
+    message: string,
+    params?: Record<string, string | number>,
+) {
+    if (!params) {
+        return message;
+    }
+
+    return Object.entries(params).reduce(
+        (currentMessage, [key, value]) =>
+            currentMessage.replaceAll(`{${key}}`, String(value)),
+        message,
+    );
 }
 
 export function PageTitle({
@@ -24,23 +44,29 @@ export function PageTitle({
     subtitle,
     titleKey,
     subtitleKey,
+    titleParams,
+    subtitleParams,
     imageSrc,
     imageAlt = '',
     children,
+    isHomepage = false,
 }: PageTitleProps) {
     const { messages } = useLocale();
-    const resolvedTitle = titleKey
-        ? messages.pageTitle[titleKey]
-        : (title ?? '');
-    const resolvedSubtitle = subtitleKey
-        ? messages.pageTitle[subtitleKey]
-        : subtitle;
+    const resolvedTitle = interpolateMessage(
+        titleKey ? messages.pageTitle[titleKey] : (title ?? ''),
+        titleParams,
+    );
+    const resolvedSubtitle = interpolateMessage(
+        subtitleKey ? messages.pageTitle[subtitleKey] : (subtitle ?? ''),
+        subtitleParams,
+    );
 
     return (
         <section
             className={[
-                'relative w-full h-88 flex flex-col justify-end overflow-hidden',
+                'relative w-full  flex flex-col justify-end overflow-hidden',
                 'mt-20 lg:mt-0',
+                isHomepage ? 'h-88' : 'h-48 lg:h-72',
                 !imageSrc &&
                     'bg-linear-to-br from-page-title-from to-page-title-to',
                 'text-white',

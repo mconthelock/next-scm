@@ -232,6 +232,9 @@ export function Header() {
                                         <Link
                                             href="/profile"
                                             className="flex items-center gap-2 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50"
+                                            onClick={() => {
+                                                setShowUserMenu(false);
+                                            }}
                                         >
                                             <User className="h-4 w-4" />
                                             {messages.header.profile}
@@ -239,6 +242,9 @@ export function Header() {
                                         <Link
                                             href="/settings"
                                             className="flex items-center gap-2 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50"
+                                            onClick={() => {
+                                                setShowUserMenu(false);
+                                            }}
                                         >
                                             <Settings className="h-4 w-4" />
                                             {messages.header.settings}

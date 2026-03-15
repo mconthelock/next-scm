@@ -79,6 +79,8 @@ export interface TableMessages {
     noResults: string;
     previous: string;
     next: string;
+    showMore: string;
+    showLess: string;
     pageStatus: string;
     morePages: string;
     filterPlaceholder: string;

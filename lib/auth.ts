@@ -29,14 +29,21 @@ interface ApiUser {
     USR_NAME: string;
     USR_EMAIL: string;
     USR_POSITION: string;
-    USER_STATUS: number;
     USR_RESETDATE?: string;
-    VENDOR: number;
-    GROUPS?: Array<{
+    USER_STATUS: {
+        STATUS_ID: number;
+        STATUS_DESC: string;
+        TONE?: string;
+    };
+    GROUPS?: {
         GRP_ID: number;
         GRP_CODE: string;
         GRP_NAME: string;
-    }>;
+    };
+    VENDORS: {
+        VND_ID: number;
+        VND_NAME: string;
+    };
 }
 
 class PasswordResetRequiredError extends CredentialsSignin {
@@ -56,6 +63,8 @@ async function getUserByUsername(username: string) {
     }
 
     const users = (await response.json()) as ApiUser[];
+    console.log(users);
+
     return users[0] ?? null;
 }
 
@@ -64,11 +73,11 @@ function mapUserToSessionUser(user: ApiUser) {
         id: String(user.USR_ID),
         name: user.USR_NAME,
         email: user.USR_EMAIL,
-        role: user.GROUPS?.[0]?.GRP_NAME ?? '',
+        role: user.GROUPS?.GRP_NAME ?? '',
         department: user.USR_POSITION,
-        groupId: user.GROUPS?.[0]?.GRP_ID,
-        groupCode: user.GROUPS?.[0]?.GRP_CODE ?? '',
-        vendoder: user.VENDOR,
+        groupId: user.GROUPS?.GRP_ID,
+        groupCode: user.GROUPS?.GRP_CODE ?? '',
+        vendoder: user.VENDORS?.VND_ID,
     };
 }
 
@@ -92,7 +101,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
 
                 try {
                     const user = await getUserByUsername(username);
-                    if (!user || user.USER_STATUS !== 1) {
+                    if (!user || user.USER_STATUS.STATUS_ID === 0) {
                         return null;
                     }
 
