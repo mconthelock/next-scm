@@ -11,10 +11,13 @@ export interface PageTitleMessages {
     aboutTitle: string;
     profileTitle: string;
     settingsTitle: string;
+    // admin pages
     adminUserTitle: string;
     adminUserSubtitle: string;
     adminLogTitle: string;
     adminLogSubtitle: string;
+    adminTicketTitle: string;
+    adminTicketSubtitle: string;
 }
 
 /** ข้อความสำหรับ banner ชื่อหน้าของแต่ละภาษา */
@@ -33,6 +36,8 @@ export const pageTitleMessages: Record<Locale, PageTitleMessages> = {
         adminUserSubtitle: `หน้าสำหรับจัดการผู้ใช้ในระบบ`,
         adminLogTitle: `บันทึกการเข้าใช้ระบบ`,
         adminLogSubtitle: `หน้าสำหรับจัดการบันทึกในระบบ`,
+        adminTicketTitle: `จัดการคำขอความช่วยเหลือ`,
+        adminTicketSubtitle: ``,
     },
     en: {
         scmTitle: 'Supply Chain Management',
@@ -49,5 +54,7 @@ export const pageTitleMessages: Record<Locale, PageTitleMessages> = {
         adminUserSubtitle: `Page for managing users in the system`,
         adminLogTitle: `Manage Logs`,
         adminLogSubtitle: `Page for managing logs in the system`,
+        adminTicketTitle: `Supplier Ticket Management`,
+        adminTicketSubtitle: ``,
     },
 };
