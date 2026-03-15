@@ -149,6 +149,10 @@ export function DataTable<TData, TValue>({
     const desktopLeafColumnCount = table
         .getAllLeafColumns()
         .filter(isDesktopVisibleColumn).length;
+    const availableColumnIds = React.useMemo(
+        () => new Set(table.getAllLeafColumns().map((column) => column.id)),
+        [table],
+    );
     const mobileRowCellGroups = React.useMemo(
         () =>
             table.getRowModel().rows.map((row) => ({
@@ -162,13 +166,36 @@ export function DataTable<TData, TValue>({
             })),
         [table],
     );
+
+    function getSelectedFilterValue(columnId: string) {
+        const activeFilter = columnFilters.find(
+            (filter) => filter.id === columnId,
+        );
+
+        return typeof activeFilter?.value === 'string'
+            ? activeFilter.value
+            : ALL_FILTER_OPTION_VALUE;
+    }
+
+    function setSelectedFilterValue(columnId: string, nextValue: string) {
+        setColumnFilters((currentFilters) => {
+            const nextFilters = currentFilters.filter(
+                (filter) => filter.id !== columnId,
+            );
+
+            if (nextValue === ALL_FILTER_OPTION_VALUE) {
+                return nextFilters;
+            }
+
+            return [...nextFilters, { id: columnId, value: nextValue }];
+        });
+    }
+
     const filterBarSelectItems = React.useMemo<DataTableFilterSelectItem[]>(
         () =>
             selectFilters
                 .map((filter) => {
-                    const column = table.getColumn(filter.columnId);
-
-                    if (!column) {
+                    if (!availableColumnIds.has(filter.columnId)) {
                         return null;
                     }
 
@@ -176,15 +203,9 @@ export function DataTable<TData, TValue>({
                         columnId: filter.columnId,
                         placeholder: filter.placeholder,
                         options: filter.options,
-                        selectedValue:
-                            (column.getFilterValue() as string | undefined) ??
-                            ALL_FILTER_OPTION_VALUE,
+                        selectedValue: getSelectedFilterValue(filter.columnId),
                         onValueChange: (nextValue: string) => {
-                            column.setFilterValue(
-                                nextValue === ALL_FILTER_OPTION_VALUE
-                                    ? undefined
-                                    : nextValue,
-                            );
+                            setSelectedFilterValue(filter.columnId, nextValue);
                         },
                     } satisfies DataTableFilterSelectItem;
                 })
@@ -192,7 +213,7 @@ export function DataTable<TData, TValue>({
                     (filter): filter is DataTableFilterSelectItem =>
                         filter !== null,
                 ),
-        [selectFilters, table],
+        [availableColumnIds, columnFilters, selectFilters],
     );
 
     function toggleMobileRow(rowId: string) {
