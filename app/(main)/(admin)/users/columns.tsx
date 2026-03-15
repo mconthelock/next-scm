@@ -51,15 +51,27 @@ const DEFAULT_USER_STATUS_BADGE: UserStatusBadge = {
 };
 
 function getUserStatusBadge(status: number): UserStatusBadge {
-    return USER_STATUS_BADGES[status as UserStatusCode] ?? DEFAULT_USER_STATUS_BADGE;
+    return (
+        USER_STATUS_BADGES[status as UserStatusCode] ??
+        DEFAULT_USER_STATUS_BADGE
+    );
 }
 
 export const columns: ColumnDef<Users>[] = [
-    { accessorKey: 'USR_LOGIN', header: 'Login' },
-    { accessorKey: 'USR_NAME', header: 'Name' },
+    {
+        accessorKey: 'USR_LOGIN',
+        header: 'users.login',
+        meta: { i18nLabelKey: 'users.login' },
+    },
+    {
+        accessorKey: 'USR_NAME',
+        header: 'users.name',
+        meta: { i18nLabelKey: 'users.name' },
+    },
     {
         accessorKey: 'USER_STATUS',
-        header: 'Status',
+        header: 'users.status',
+        meta: { i18nLabelKey: 'users.status' },
         cell: ({ row }) => {
             const badge = getUserStatusBadge(row.original.USER_STATUS);
 
@@ -72,12 +84,20 @@ export const columns: ColumnDef<Users>[] = [
             );
         },
     },
-    { accessorKey: 'USR_EMAIL', header: 'Email' },
+    {
+        accessorKey: 'USR_EMAIL',
+        header: 'users.email',
+        meta: { i18nLabelKey: 'users.email' },
+    },
     {
         id: 'GROUPS',
         accessorFn: (row) =>
             row.GROUPS?.map((group) => group.GRP_NAME).join(', ') ?? '',
-        header: 'Groups',
+        header: 'users.groups',
+        meta: {
+            i18nLabelKey: 'users.groups',
+            mobileHidden: true,
+        },
         cell: ({ row }) => (
             <div>
                 {row.original.GROUPS?.map((group) => (

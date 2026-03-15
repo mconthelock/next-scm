@@ -81,6 +81,12 @@ export interface TableMessages {
     next: string;
     pageStatus: string;
     morePages: string;
+    filterPlaceholder: string;
+    sortColumnLabel: string;
+    sortDirectionAsc: string;
+    sortDirectionDesc: string;
+    /** map key -> label สำหรับหัวตารางและ label ใน mobile card */
+    columnLabels: Record<string, string>;
 }
 
 /** ข้อความทั้งหมดของแต่ละภาษา */

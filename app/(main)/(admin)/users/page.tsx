@@ -28,8 +28,7 @@ export default async function Page() {
                 <DataTable
                     columns={columns}
                     data={data}
-                    filterColumnId="USR_EMAIL"
-                    filterPlaceholder="Filter emails..."
+                    filterColumnIds={['USR_LOGIN', 'USR_NAME', 'USR_EMAIL']}
                 />
             </div>
         </>
