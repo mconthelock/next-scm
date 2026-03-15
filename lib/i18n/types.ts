@@ -13,6 +13,8 @@ export interface HeaderMessages {
     settings: string;
     logout: string;
     login: string;
+    tickets: string;
+    manual: string;
     accountLogin: string;
     noRoleAssigned: string;
     mobileTagline: string;

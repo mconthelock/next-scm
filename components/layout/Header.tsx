@@ -9,6 +9,8 @@ import {
     Settings,
     ChevronLeft,
     LogOut,
+    MessageCircle,
+    BookSearch,
 } from 'lucide-react';
 import React, { useState, useEffect } from 'react';
 import { useSession, signOut } from 'next-auth/react';
@@ -248,6 +250,26 @@ export function Header() {
                                         >
                                             <Settings className="h-4 w-4" />
                                             {messages.header.settings}
+                                        </Link>
+                                        <Link
+                                            href="/tickets"
+                                            className="flex items-center gap-2 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50"
+                                            onClick={() => {
+                                                setShowUserMenu(false);
+                                            }}
+                                        >
+                                            <MessageCircle className="h-4 w-4" />
+                                            {messages.header.tickets}
+                                        </Link>
+                                        <Link
+                                            href="/manual"
+                                            className="flex items-center gap-2 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50"
+                                            onClick={() => {
+                                                setShowUserMenu(false);
+                                            }}
+                                        >
+                                            <BookSearch className="h-4 w-4" />
+                                            {messages.header.manual}
                                         </Link>
                                         <div className="border-t border-slate-100 mt-1 pt-1">
                                             <button

@@ -10,6 +10,7 @@ const createUser = require('./schemas/users');
 const createVendor = require('./schemas/vendors');
 const createVendorCode = require('./schemas/vendors_code');
 const createUserLog = require('./schemas/users_logs');
+const createTickets = require('./schemas/tickets');
 
 function getRandom(min, max) {
     min = Math.ceil(min);
@@ -25,6 +26,7 @@ const generateDB = () => {
         vendors: [],
         authen: [],
         logs: [],
+        tickets: [],
     };
     // สร้าง status
     db.status = STATUS_DEFINITIONS.map(createStatus);
@@ -73,6 +75,11 @@ const generateDB = () => {
     }
 
     db.authen = createMenuUser(MENU_DEFINITIONS);
+
+    for (let i = 1; i <= 2000; i++) {
+        const ticket = createTickets(i);
+        db.tickets.push(ticket);
+    }
     return db;
 };
 

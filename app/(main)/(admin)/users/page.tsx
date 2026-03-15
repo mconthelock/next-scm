@@ -29,6 +29,7 @@ function PageForm() {
                 })),
         [data, locale],
     );
+
     const statusOptions = useMemo(
         () =>
             Array.from(

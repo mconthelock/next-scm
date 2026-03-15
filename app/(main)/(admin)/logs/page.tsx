@@ -1,11 +1,11 @@
 'use client';
 
 import { PageTitle } from '@/components/layout/PageTitle';
-import { columns } from './columns';
 import { DataTable } from '@/components/data-table/DataTable';
 import { Button } from '@/components/ui/button';
-import { useLogs } from './use-logs';
 import { useLocale } from '@/components/providers/LocaleProvider';
+import { columns } from './columns';
+import { useLogs } from './use-logs';
 
 function PageForm() {
     const { data, isLoading, loadError, retryLoadLogs } = useLogs();
