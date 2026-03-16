@@ -61,7 +61,7 @@ const generateDB = () => {
         const randomStatus = userStatus[getRandom(0, userStatus.length)];
         const randomGroup = db.users_group[getRandom(0, db.users_group.length)];
         let vndData = null;
-        if (randomGroup.GRP_ID === 3) {
+        if (randomGroup.GRP_ID === 16) {
             vndData = db.vendors[getRandom(0, db.vendors.length)];
         }
         let users = createUser(i, randomStatus, randomGroup, vndData);
@@ -69,7 +69,7 @@ const generateDB = () => {
     }
 
     for (let i = 1; i <= 5000; i++) {
-        const randomUser = db.users[getRandom(0, db.users.length)].USR_LOGIN;
+        const randomUser = db.users[getRandom(0, db.users.length)];
         const userLog = createUserLog(i, randomUser);
         db.logs.push(userLog);
     }
